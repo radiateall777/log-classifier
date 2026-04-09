@@ -1,0 +1,59 @@
+{
+  "metrics": {
+    "accuracy": 0.228,
+    "macro_f1": 0.13033306899286282,
+    "weighted_f1": 0.13033306899286282,
+    "macro_precision": 0.09186320754716981,
+    "macro_recall": 0.22800000000000004
+  },
+  "classification_report": {
+    "Java Spring相关": {
+      "precision": 0.24056603773584906,
+      "recall": 0.51,
+      "f1-score": 0.3269230769230769,
+      "support": 100.0
+    },
+    "代码补全": {
+      "precision": 0.21875,
+      "recall": 0.63,
+      "f1-score": 0.3247422680412371,
+      "support": 100.0
+    },
+    "动态规划": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 100.0
+    },
+    "排序算法": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 100.0
+    },
+    "搜索算法": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 100.0
+    },
+    "accuracy": 0.228,
+    "macro avg": {
+      "precision": 0.09186320754716981,
+      "recall": 0.22800000000000004,
+      "f1-score": 0.13033306899286282,
+      "support": 500.0
+    },
+    "weighted avg": {
+      "precision": 0.09186320754716983,
+      "recall": 0.228,
+      "f1-score": 0.13033306899286282,
+      "support": 500.0
+    }
+  },
+  "elapsed_seconds": 122.5156626701355,
+  "throughput_samples_per_second": 4.0811108482203915,
+  "model_name": "hfl/chinese-macbert-base",
+  "test_samples": 500,
+  "num_labels": 5
+}

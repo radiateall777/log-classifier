@@ -1,0 +1,59 @@
+{
+  "metrics": {
+    "accuracy": 0.19,
+    "macro_f1": 0.11242617453190604,
+    "weighted_f1": 0.11242617453190605,
+    "macro_precision": 0.12183809523809522,
+    "macro_recall": 0.19
+  },
+  "classification_report": {
+    "Java Spring相关": {
+      "precision": 0.13333333333333333,
+      "recall": 0.06,
+      "f1-score": 0.08275862068965517,
+      "support": 100.0
+    },
+    "代码补全": {
+      "precision": 0.125,
+      "recall": 0.03,
+      "f1-score": 0.04838709677419355,
+      "support": 100.0
+    },
+    "动态规划": {
+      "precision": 0.208,
+      "recall": 0.78,
+      "f1-score": 0.32842105263157895,
+      "support": 100.0
+    },
+    "排序算法": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 100.0
+    },
+    "搜索算法": {
+      "precision": 0.14285714285714285,
+      "recall": 0.08,
+      "f1-score": 0.10256410256410256,
+      "support": 100.0
+    },
+    "accuracy": 0.19,
+    "macro avg": {
+      "precision": 0.12183809523809522,
+      "recall": 0.19,
+      "f1-score": 0.11242617453190604,
+      "support": 500.0
+    },
+    "weighted avg": {
+      "precision": 0.12183809523809525,
+      "recall": 0.19,
+      "f1-score": 0.11242617453190605,
+      "support": 500.0
+    }
+  },
+  "elapsed_seconds": 251.30339431762695,
+  "throughput_samples_per_second": 1.9896269262803543,
+  "model_name": "xlnet-base-cased",
+  "test_samples": 500,
+  "num_labels": 5
+}

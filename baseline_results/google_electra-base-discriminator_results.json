@@ -1,0 +1,59 @@
+{
+  "metrics": {
+    "accuracy": 0.212,
+    "macro_f1": 0.14425889875213393,
+    "weighted_f1": 0.1442588987521339,
+    "macro_precision": 0.18227445706957865,
+    "macro_recall": 0.21200000000000002
+  },
+  "classification_report": {
+    "Java Spring相关": {
+      "precision": 0.1702127659574468,
+      "recall": 0.16,
+      "f1-score": 0.16494845360824742,
+      "support": 100.0
+    },
+    "代码补全": {
+      "precision": 0.27586206896551724,
+      "recall": 0.08,
+      "f1-score": 0.12403100775193798,
+      "support": 100.0
+    },
+    "动态规划": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 100.0
+    },
+    "排序算法": {
+      "precision": 0.21529745042492918,
+      "recall": 0.76,
+      "f1-score": 0.3355408388520971,
+      "support": 100.0
+    },
+    "搜索算法": {
+      "precision": 0.25,
+      "recall": 0.06,
+      "f1-score": 0.0967741935483871,
+      "support": 100.0
+    },
+    "accuracy": 0.212,
+    "macro avg": {
+      "precision": 0.18227445706957865,
+      "recall": 0.21200000000000002,
+      "f1-score": 0.14425889875213393,
+      "support": 500.0
+    },
+    "weighted avg": {
+      "precision": 0.18227445706957862,
+      "recall": 0.212,
+      "f1-score": 0.1442588987521339,
+      "support": 500.0
+    }
+  },
+  "elapsed_seconds": 129.94363856315613,
+  "throughput_samples_per_second": 3.847822067541894,
+  "model_name": "google/electra-base-discriminator",
+  "test_samples": 500,
+  "num_labels": 5
+}
