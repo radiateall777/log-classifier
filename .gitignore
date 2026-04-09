@@ -1,0 +1,13 @@
+output/
+/output
+/logs
+/checkpoints
+/models
+/results
+/tests
+/docs
+/examples
+/tutorials
+/notebooks
+/configs
+/scripts
