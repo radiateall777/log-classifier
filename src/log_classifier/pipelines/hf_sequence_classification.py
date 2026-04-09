@@ -1,0 +1,205 @@
+"""HuggingFace Trainer 序列分类训练流水线。
+
+职责仅为「编排」：按顺序调用 data / models / training 子模块，
+本身不包含数据处理或模型构建细节。
+"""
+
+import json
+import os
+import time
+from typing import Any, Dict, List, Optional
+
+import numpy as np
+import torch
+from sklearn.metrics import accuracy_score, classification_report, f1_score
+from sklearn.utils.class_weight import compute_class_weight
+from transformers import (
+    DataCollatorWithPadding,
+    EarlyStoppingCallback,
+    TrainingArguments,
+)
+
+from log_classifier.config import DataConfig, ModelConfig, TrainConfig
+from log_classifier.data.hf_dataset import build_hf_dataset_dict, tokenize_datasets
+from log_classifier.data.preprocess import (
+    assign_label_ids,
+    build_label_maps,
+    build_samples,
+    filter_rare_classes,
+    load_json_data,
+    split_dataset,
+)
+from log_classifier.models.hf_classifier import build_model, build_tokenizer
+from log_classifier.training.metrics import compute_metrics
+from log_classifier.training.weighted_trainer import WeightedTrainer
+
+
+# ------------------------------------------------------------------
+# 内部辅助
+# ------------------------------------------------------------------
+
+def _compute_class_weights(
+    train_data: List[Dict[str, Any]],
+    enabled: bool,
+) -> Optional[torch.Tensor]:
+    if not enabled:
+        return None
+    train_labels = np.array([x["labels"] for x in train_data])
+    weights = compute_class_weight(
+        class_weight="balanced",
+        classes=np.unique(train_labels),
+        y=train_labels,
+    )
+    tensor = torch.tensor(weights, dtype=torch.float)
+    print(f"[Info] 使用 class weights: {tensor.tolist()}")
+    return tensor
+
+
+def _make_training_args(
+    train_cfg: TrainConfig,
+    model_cfg: ModelConfig,
+) -> TrainingArguments:
+    return TrainingArguments(
+        output_dir=train_cfg.output_dir,
+        overwrite_output_dir=True,
+
+        eval_strategy="epoch",
+        save_strategy="epoch",
+        logging_strategy="steps",
+        logging_steps=train_cfg.logging_steps,
+
+        per_device_train_batch_size=train_cfg.train_batch_size,
+        per_device_eval_batch_size=train_cfg.eval_batch_size,
+        learning_rate=train_cfg.learning_rate,
+        weight_decay=train_cfg.weight_decay,
+        num_train_epochs=train_cfg.num_train_epochs,
+        warmup_ratio=train_cfg.warmup_ratio,
+
+        load_best_model_at_end=True,
+        metric_for_best_model="macro_f1",
+        greater_is_better=True,
+        save_total_limit=train_cfg.save_total_limit,
+
+        fp16=train_cfg.fp16,
+        report_to="none",
+        seed=train_cfg.seed,
+    )
+
+
+def _evaluate_and_report(
+    trainer: WeightedTrainer,
+    tokenized_datasets,
+    id2label: Dict[int, str],
+) -> None:
+    print("\n========== 验证集结果 ==========")
+    val_metrics = trainer.evaluate(tokenized_datasets["validation"])
+    print(val_metrics)
+
+    print("\n========== 测试集结果 ==========")
+    num_test_samples = len(tokenized_datasets["test"])
+    t_start = time.perf_counter()
+    test_output = trainer.predict(tokenized_datasets["test"])
+    t_elapsed = time.perf_counter() - t_start
+
+    test_preds = np.argmax(test_output.predictions, axis=-1)
+    test_labels = test_output.label_ids
+    throughput = num_test_samples / t_elapsed if t_elapsed > 0 else float("inf")
+
+    print({
+        "test_accuracy": accuracy_score(test_labels, test_preds),
+        "test_macro_f1": f1_score(test_labels, test_preds, average="macro", zero_division=0),
+        "test_weighted_f1": f1_score(test_labels, test_preds, average="weighted", zero_division=0),
+        "test_samples": num_test_samples,
+        "test_elapsed_sec": round(t_elapsed, 3),
+        "test_throughput_samples_per_sec": round(throughput, 2),
+    })
+
+    print("\n========== 分类报告 ==========")
+    print(classification_report(
+        test_labels, test_preds,
+        target_names=[id2label[i] for i in range(len(id2label))],
+        digits=4, zero_division=0,
+    ))
+
+
+def _save_artifacts(
+    trainer: WeightedTrainer,
+    tokenizer,
+    output_dir: str,
+    label2id: Dict[str, int],
+    id2label: Dict[int, str],
+) -> None:
+    os.makedirs(output_dir, exist_ok=True)
+    trainer.save_model(output_dir)
+    tokenizer.save_pretrained(output_dir)
+
+    label_map_path = os.path.join(output_dir, "label_mappings.json")
+    with open(label_map_path, "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "label2id": label2id,
+                "id2label": {str(k): v for k, v in id2label.items()},
+            },
+            f, ensure_ascii=False, indent=2,
+        )
+    print(f"\n模型和标签映射已保存到: {output_dir}")
+
+
+# ------------------------------------------------------------------
+# 公开接口
+# ------------------------------------------------------------------
+
+def run_hf_sequence_classification(
+    data_cfg: DataConfig,
+    model_cfg: ModelConfig,
+    train_cfg: TrainConfig,
+) -> None:
+    # ---- 数据 ----
+    raw_data = load_json_data(data_cfg.data_path)
+    samples = build_samples(raw_data, data_cfg.label_field, data_cfg.text_mode)
+    samples = filter_rare_classes(samples, min_count=data_cfg.min_class_count)
+    print(f"总样本数: {len(samples)}")
+
+    label_list, label2id, id2label = build_label_maps(samples)
+    assign_label_ids(samples, label2id)
+    print(f"标签数: {len(label_list)}")
+    print(f"标签列表: {label_list}")
+
+    train_data, dev_data, test_data = split_dataset(
+        samples, seed=train_cfg.seed,
+        test_size=data_cfg.test_size, dev_size=data_cfg.dev_size,
+    )
+    print(f"Train: {len(train_data)} | Dev: {len(dev_data)} | Test: {len(test_data)}")
+
+    # ---- HF 适配 ----
+    dataset_dict = build_hf_dataset_dict(train_data, dev_data, test_data)
+    tokenizer = build_tokenizer(model_cfg.model_name)
+    tokenized_datasets = tokenize_datasets(dataset_dict, tokenizer, model_cfg.max_length)
+
+    # ---- 模型 ----
+    model = build_model(model_cfg.model_name, len(label_list), id2label, label2id)
+
+    # ---- Trainer ----
+    class_weights = _compute_class_weights(train_data, train_cfg.use_class_weights)
+    training_args = _make_training_args(train_cfg, model_cfg)
+
+    trainer = WeightedTrainer(
+        model=model,
+        args=training_args,
+        train_dataset=tokenized_datasets["train"],
+        eval_dataset=tokenized_datasets["validation"],
+        tokenizer=tokenizer,
+        data_collator=DataCollatorWithPadding(tokenizer=tokenizer),
+        compute_metrics=compute_metrics,
+        class_weights=class_weights,
+        callbacks=[
+            EarlyStoppingCallback(early_stopping_patience=train_cfg.early_stopping_patience),
+        ],
+    )
+
+    # ---- 训练 & 评估 & 保存 ----
+    print("\n========== 开始训练 ==========")
+    trainer.train()
+
+    _evaluate_and_report(trainer, tokenized_datasets, id2label)
+    _save_artifacts(trainer, tokenizer, train_cfg.output_dir, label2id, id2label)
