@@ -5,6 +5,7 @@
 """
 
 import json
+import math
 import os
 import time
 from typing import Any, Dict, List, Optional
@@ -58,10 +59,11 @@ def _compute_class_weights(
 def _make_training_args(
     train_cfg: TrainConfig,
     model_cfg: ModelConfig,
+    total_training_steps: int,
 ) -> TrainingArguments:
+    warmup_steps = int(total_training_steps * train_cfg.warmup_ratio)
     return TrainingArguments(
         output_dir=train_cfg.output_dir,
-        overwrite_output_dir=True,
 
         eval_strategy="epoch",
         save_strategy="epoch",
@@ -73,7 +75,7 @@ def _make_training_args(
         learning_rate=train_cfg.learning_rate,
         weight_decay=train_cfg.weight_decay,
         num_train_epochs=train_cfg.num_train_epochs,
-        warmup_ratio=train_cfg.warmup_ratio,
+        warmup_steps=warmup_steps,
 
         load_best_model_at_end=True,
         metric_for_best_model="macro_f1",
@@ -181,14 +183,16 @@ def run_hf_sequence_classification(
 
     # ---- Trainer ----
     class_weights = _compute_class_weights(train_data, train_cfg.use_class_weights)
-    training_args = _make_training_args(train_cfg, model_cfg)
+    steps_per_epoch = math.ceil(len(tokenized_datasets["train"]) / train_cfg.train_batch_size)
+    total_training_steps = steps_per_epoch * train_cfg.num_train_epochs
+    training_args = _make_training_args(train_cfg, model_cfg, total_training_steps)
 
     trainer = WeightedTrainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_datasets["train"],
         eval_dataset=tokenized_datasets["validation"],
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
         data_collator=DataCollatorWithPadding(tokenizer=tokenizer),
         compute_metrics=compute_metrics,
         class_weights=class_weights,

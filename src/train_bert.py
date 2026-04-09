@@ -4,6 +4,11 @@
     uv run python src/train_bert.py
 """
 
+import os
+
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0")
+
 from log_classifier.config import DataConfig, ModelConfig, TrainConfig
 from log_classifier.pipelines import run_hf_sequence_classification
 from log_classifier.utils import seed_everything
