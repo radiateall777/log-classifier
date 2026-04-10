@@ -18,7 +18,12 @@
 | GraphCodeBERT | `microsoft/graphcodebert-base` | 微软代码结构理解模型 | 2021 |
 | UnixCoder | `Microsoft/unixcoder-base` | 微软统一代码理解模型 | 2022 |
 
-> ⚠️ 当前 baseline 脚本为 **零样本评估**（不对模型做微调），因此准确率接近随机水平。如需微调，请使用 `src/train_bert.py` 或 `src/train_bert_lightning.py`。
+> ⚠️ `run_baseline.py` 为零样本推理（不训练，直接评估预训练权重），准确率接近随机。
+> 如需对 baseline 模型做**完整微调训练**，请使用：
+> ```bash
+> python3 baselines/run_baseline_train.py --model bert-base-uncased
+> bash baselines/run_all_baselines_train.sh   # 一键训练所有 baseline
+> ```
 
 ## 🚀 快速开始
 
