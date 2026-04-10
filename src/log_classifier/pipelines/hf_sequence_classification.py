@@ -2,17 +2,23 @@
 
 职责仅为「编排」：按顺序调用 data / models / training 子模块，
 本身不包含数据处理或模型构建细节。
+
+所有配置通过 DataConfig / ModelConfig / TrainConfig 传入，
+训练结果以结构化 dict 形式返回，供调用方持久化。
 """
 
 import json
 import math
 import os
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
-from sklearn.metrics import accuracy_score, classification_report, f1_score
+from sklearn.metrics import (
+    accuracy_score, classification_report, f1_score,
+    precision_score, recall_score,
+)
 from sklearn.utils.class_weight import compute_class_weight
 from transformers import (
     DataCollatorWithPadding,
@@ -23,12 +29,8 @@ from transformers import (
 from log_classifier.config import DataConfig, ModelConfig, TrainConfig
 from log_classifier.data.hf_dataset import build_hf_dataset_dict, tokenize_datasets
 from log_classifier.data.preprocess import (
-    assign_label_ids,
-    build_label_maps,
-    build_samples,
-    filter_rare_classes,
-    load_json_data,
-    split_dataset,
+    assign_label_ids, build_label_maps, build_samples,
+    filter_rare_classes, load_json_data, split_dataset,
 )
 from log_classifier.models.hf_classifier import build_model, build_tokenizer
 from log_classifier.training.metrics import compute_metrics
@@ -92,7 +94,8 @@ def _evaluate_and_report(
     trainer: WeightedTrainer,
     tokenized_datasets,
     id2label: Dict[int, str],
-) -> None:
+) -> Tuple[Dict[str, float], Dict[str, float], np.ndarray, np.ndarray, float]:
+    """评估并返回结构化结果。"""
     print("\n========== 验证集结果 ==========")
     val_metrics = trainer.evaluate(tokenized_datasets["validation"])
     print(val_metrics)
@@ -107,10 +110,18 @@ def _evaluate_and_report(
     test_labels = test_output.label_ids
     throughput = num_test_samples / t_elapsed if t_elapsed > 0 else float("inf")
 
+    test_metrics = {
+        "accuracy": accuracy_score(test_labels, test_preds),
+        "macro_f1": f1_score(test_labels, test_preds, average="macro", zero_division=0),
+        "weighted_f1": f1_score(test_labels, test_preds, average="weighted", zero_division=0),
+        "precision": precision_score(test_labels, test_preds, average="macro", zero_division=0),
+        "recall": recall_score(test_labels, test_preds, average="macro", zero_division=0),
+    }
+
     print({
-        "test_accuracy": accuracy_score(test_labels, test_preds),
-        "test_macro_f1": f1_score(test_labels, test_preds, average="macro", zero_division=0),
-        "test_weighted_f1": f1_score(test_labels, test_preds, average="weighted", zero_division=0),
+        "test_accuracy": test_metrics["accuracy"],
+        "test_macro_f1": test_metrics["macro_f1"],
+        "test_weighted_f1": test_metrics["weighted_f1"],
         "test_samples": num_test_samples,
         "test_elapsed_sec": round(t_elapsed, 3),
         "test_throughput_samples_per_sec": round(throughput, 2),
@@ -123,6 +134,8 @@ def _evaluate_and_report(
         digits=4, zero_division=0,
     ))
 
+    return val_metrics, test_metrics, test_preds, test_labels, throughput
+
 
 def _save_artifacts(
     trainer: WeightedTrainer,
@@ -130,20 +143,26 @@ def _save_artifacts(
     output_dir: str,
     label2id: Dict[str, int],
     id2label: Dict[int, str],
+    train_data: List[Dict[str, Any]],
+    dev_data: List[Dict[str, Any]],
+    test_data: List[Dict[str, Any]],
+    model_name: str,
 ) -> None:
     os.makedirs(output_dir, exist_ok=True)
     trainer.save_model(output_dir)
     tokenizer.save_pretrained(output_dir)
 
-    label_map_path = os.path.join(output_dir, "label_mappings.json")
-    with open(label_map_path, "w", encoding="utf-8") as f:
+    with open(os.path.join(output_dir, "label_mappings.json"), "w", encoding="utf-8") as f:
         json.dump(
-            {
-                "label2id": label2id,
-                "id2label": {str(k): v for k, v in id2label.items()},
-            },
+            {"label2id": label2id, "id2label": {str(k): v for k, v in id2label.items()}},
             f, ensure_ascii=False, indent=2,
         )
+
+    splits_path = os.path.join(output_dir, f"{model_name.replace('/', '_')}_splits.json")
+    with open(splits_path, "w", encoding="utf-8") as f:
+        json.dump({"train": train_data, "dev": dev_data, "test": test_data},
+                  f, ensure_ascii=False, indent=2)
+
     print(f"\n模型和标签映射已保存到: {output_dir}")
 
 
@@ -155,7 +174,11 @@ def run_hf_sequence_classification(
     data_cfg: DataConfig,
     model_cfg: ModelConfig,
     train_cfg: TrainConfig,
-) -> None:
+) -> Dict[str, Any]:
+    """执行完整训练流程，返回结构化结果字典。
+
+    调用方负责持久化结果（save_model / save_pretrained 已在内部完成）。
+    """
     # ---- 数据 ----
     raw_data = load_json_data(data_cfg.data_path)
     samples = build_samples(raw_data, data_cfg.label_field, data_cfg.text_mode)
@@ -203,7 +226,32 @@ def run_hf_sequence_classification(
 
     # ---- 训练 & 评估 & 保存 ----
     print("\n========== 开始训练 ==========")
+    t0 = time.perf_counter()
     trainer.train()
+    train_elapsed = time.perf_counter() - t0
+    print(f"训练完成，耗时: {train_elapsed:.2f}s")
 
-    _evaluate_and_report(trainer, tokenized_datasets, id2label)
-    _save_artifacts(trainer, tokenizer, train_cfg.output_dir, label2id, id2label)
+    val_metrics, test_metrics, test_preds, test_labels, throughput \
+        = _evaluate_and_report(trainer, tokenized_datasets, id2label)
+
+    _save_artifacts(
+        trainer, tokenizer, train_cfg.output_dir,
+        label2id, id2label,
+        train_data, dev_data, test_data,
+        model_cfg.model_name,
+    )
+
+    return {
+        "model_name": model_cfg.model_name,
+        "label_list": label_list,
+        "label2id": label2id,
+        "id2label": id2label,
+        "train_samples": len(train_data),
+        "dev_samples": len(dev_data),
+        "test_samples": len(test_data),
+        "num_labels": len(label_list),
+        "val_metrics": val_metrics,
+        "test_metrics": test_metrics,
+        "train_elapsed_seconds": round(train_elapsed, 3),
+        "test_throughput_samples_per_sec": round(throughput, 2),
+    }

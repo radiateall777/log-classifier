@@ -1,7 +1,7 @@
 """BERT 序列分类训练入口。
 
 用法::
-    uv run python src/train_bert.py
+    python3 src/train_bert.py
 """
 
 import os
@@ -20,7 +20,8 @@ def main() -> None:
     train_cfg = TrainConfig()
 
     seed_everything(train_cfg.seed)
-    run_hf_sequence_classification(data_cfg, model_cfg, train_cfg)
+    result = run_hf_sequence_classification(data_cfg, model_cfg, train_cfg)
+    print(f"\n训练完成，Macro F1: {result['test_metrics']['macro_f1']:.4f}")
 
 
 if __name__ == "__main__":
