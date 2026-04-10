@@ -137,16 +137,51 @@ def _evaluate_and_report(
     return val_metrics, test_metrics, test_preds, test_labels, throughput
 
 
+def _load_fixed_splits(
+    data_cfg: DataConfig,
+    train_cfg: TrainConfig,
+) -> Optional[Dict[str, Any]]:
+    """尝试从预先生成的固定划分文件加载数据。
+
+    若 `{data_path}_splits.json` 存在且 seed/test_size/dev_size 与配置一致，
+    直接返回划分好的数据；否则返回 None，由调用方执行 split_dataset。
+    """
+    splits_path = data_cfg.data_path.replace(".jsonl", "_splits.json").replace(".json", "_splits.json")
+    if not os.path.exists(splits_path):
+        return None
+
+    try:
+        with open(splits_path, "r", encoding="utf-8") as f:
+            saved = json.load(f)
+
+        # 校验划分参数一致性（seed 及比例写在 splits 文件元数据中）
+        meta = saved.get("_meta", {})
+        if (meta.get("seed") != train_cfg.seed
+                or abs(meta.get("test_size", 0) - data_cfg.test_size) > 1e-6
+                or abs(meta.get("dev_size", 0) - data_cfg.dev_size) > 1e-6):
+            print(f"[Warning] 固定划分参数与当前配置不一致，重新划分。")
+            return None
+
+        print(f"[Info] 使用固定数据划分: {splits_path}")
+        return {
+            "train": saved["train"],
+            "dev": saved["dev"],
+            "test": saved["test"],
+            "label_list": saved.get("label_list"),
+            "label2id": saved.get("label2id"),
+            "id2label": saved.get("id2label"),
+        }
+    except (json.JSONDecodeError, KeyError) as e:
+        print(f"[Warning] 固定划分文件读取失败 ({e})，重新划分。")
+        return None
+
+
 def _save_artifacts(
     trainer: WeightedTrainer,
     tokenizer,
     output_dir: str,
     label2id: Dict[str, int],
     id2label: Dict[int, str],
-    train_data: List[Dict[str, Any]],
-    dev_data: List[Dict[str, Any]],
-    test_data: List[Dict[str, Any]],
-    model_name: str,
 ) -> None:
     os.makedirs(output_dir, exist_ok=True)
     trainer.save_model(output_dir)
@@ -157,11 +192,6 @@ def _save_artifacts(
             {"label2id": label2id, "id2label": {str(k): v for k, v in id2label.items()}},
             f, ensure_ascii=False, indent=2,
         )
-
-    splits_path = os.path.join(output_dir, f"{model_name.replace('/', '_')}_splits.json")
-    with open(splits_path, "w", encoding="utf-8") as f:
-        json.dump({"train": train_data, "dev": dev_data, "test": test_data},
-                  f, ensure_ascii=False, indent=2)
 
     print(f"\n模型和标签映射已保存到: {output_dir}")
 
@@ -179,22 +209,46 @@ def run_hf_sequence_classification(
 
     调用方负责持久化结果（save_model / save_pretrained 已在内部完成）。
     """
-    # ---- 数据 ----
-    raw_data = load_json_data(data_cfg.data_path)
-    samples = build_samples(raw_data, data_cfg.label_field, data_cfg.text_mode)
-    samples = filter_rare_classes(samples, min_count=data_cfg.min_class_count)
-    print(f"总样本数: {len(samples)}")
+    # ---- 数据（优先使用固定划分文件） ----
+    fixed = _load_fixed_splits(data_cfg, train_cfg)
 
-    label_list, label2id, id2label = build_label_maps(samples)
-    assign_label_ids(samples, label2id)
-    print(f"标签数: {len(label_list)}")
-    print(f"标签列表: {label_list}")
+    if fixed is not None:
+        train_data = fixed["train"]
+        dev_data = fixed["dev"]
+        test_data = fixed["test"]
+        label_list = fixed.get("label_list")
+        label2id = fixed.get("label2id")
+        id2label = fixed.get("id2label")
 
-    train_data, dev_data, test_data = split_dataset(
-        samples, seed=train_cfg.seed,
-        test_size=data_cfg.test_size, dev_size=data_cfg.dev_size,
-    )
-    print(f"Train: {len(train_data)} | Dev: {len(dev_data)} | Test: {len(test_data)}")
+        # 恢复 labels 字段（splits 中只有 label_text）
+        if "labels" not in train_data[0]:
+            for s in train_data:
+                s["labels"] = label2id[s["label_text"]]
+            for s in dev_data:
+                s["labels"] = label2id[s["label_text"]]
+            for s in test_data:
+                s["labels"] = label2id[s["label_text"]]
+
+        print(f"总样本数（固定划分）: {len(train_data) + len(dev_data) + len(test_data)}")
+        print(f"标签数: {len(label_list)}")
+        print(f"标签列表: {label_list}")
+        print(f"Train: {len(train_data)} | Dev: {len(dev_data)} | Test: {len(test_data)}")
+    else:
+        raw_data = load_json_data(data_cfg.data_path)
+        samples = build_samples(raw_data, data_cfg.label_field, data_cfg.text_mode)
+        samples = filter_rare_classes(samples, min_count=data_cfg.min_class_count)
+        print(f"总样本数: {len(samples)}")
+
+        label_list, label2id, id2label = build_label_maps(samples)
+        assign_label_ids(samples, label2id)
+        print(f"标签数: {len(label_list)}")
+        print(f"标签列表: {label_list}")
+
+        train_data, dev_data, test_data = split_dataset(
+            samples, seed=train_cfg.seed,
+            test_size=data_cfg.test_size, dev_size=data_cfg.dev_size,
+        )
+        print(f"Train: {len(train_data)} | Dev: {len(dev_data)} | Test: {len(test_data)}")
 
     # ---- HF 适配 ----
     dataset_dict = build_hf_dataset_dict(train_data, dev_data, test_data)
@@ -237,8 +291,6 @@ def run_hf_sequence_classification(
     _save_artifacts(
         trainer, tokenizer, train_cfg.output_dir,
         label2id, id2label,
-        train_data, dev_data, test_data,
-        model_cfg.model_name,
     )
 
     return {
