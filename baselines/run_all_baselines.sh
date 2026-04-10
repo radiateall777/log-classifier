@@ -70,7 +70,7 @@ for baseline in "${BASELINES[@]}"; do
     fi
 
     # 运行baseline
-    python baselines/run_baseline.py \
+    python3 baselines/run_baseline.py \
         --model "$MODEL_ID" \
         --max_length $MAX_LENGTH \
         --batch_size $BATCH_SIZE \
@@ -95,7 +95,7 @@ echo "=============================================="
 echo "生成汇总报告..."
 echo "=============================================="
 
-python << 'EOF'
+python3 << 'EOF'
 import json
 import os
 import glob

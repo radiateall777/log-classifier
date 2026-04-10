@@ -248,7 +248,8 @@ def run_inference(
     with torch.no_grad():
         for i in range(0, len(texts), batch_size):
             batch_texts = texts[i:i+batch_size]
-            batch_labels = labels[i:i+batch_size]
+            # batch_labels 未使用，移除避免 lint 警告
+            _ = labels[i:i+batch_size]
 
             # Tokenize
             inputs = tokenizer(
@@ -292,13 +293,22 @@ def run_pipeline_inference(
 
     device = 0 if torch.cuda.is_available() else -1  # -1表示CPU
 
+    # 优先使用已下载的本地模型路径，避免重复下载
+    cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "huggingface", "hub")
+    resolved_model = model_name
+    for entry in os.listdir(cache_dir):
+        if model_name.replace("/", "--") in entry:
+            resolved_model = os.path.join(cache_dir, entry)
+            break
+
     classifier = pipeline(
         "text-classification",
-        model=model_name,
-        tokenizer=model_name,
+        model=resolved_model,
+        tokenizer=resolved_model,
         device=device,
         max_length=max_length,
         truncation=True,
+        top_k=None,  # 返回所有标签的分数，方便解析
     )
 
     texts = [s["text"] for s in samples]
@@ -313,17 +323,24 @@ def run_pipeline_inference(
     elapsed = time.time() - start_time
     throughput = len(samples) / elapsed if elapsed > 0 else float("inf")
 
-    # 解析预测结果
-    all_preds = []
-    for pred in predictions:
-        if isinstance(pred, list):
-            # 多标签情况，取最高置信度的
-            pred = max(pred, key=lambda x: x["score"])
-        all_preds.append(id2label.get(pred["label"], pred["label"]))
-
-    # 转换标签名为ID
+    # 解析预测结果：pipeline 可能返回整数索引 (如 "LABEL_0") 或原始标签名
     label2id_in_model = {v: k for k, v in id2label.items()}
-    all_preds_ids = [label2id_in_model.get(p, 0) for p in all_preds]
+    all_preds_ids = []
+    for pred_batch in predictions:
+        if isinstance(pred_batch, list) and len(pred_batch) > 0:
+            # 取最高分结果
+            best = max(pred_batch, key=lambda x: x["score"])
+            label_str = best["label"]
+            # 尝试直接映射为 id；若模型使用 LABEL_N 格式则按顺序取最大值
+            if label_str in label2id_in_model:
+                all_preds_ids.append(label2id_in_model[label_str])
+            else:
+                # fallback: 取最高分对应的 index
+                sorted_preds = sorted(pred_batch, key=lambda x: x["score"], reverse=True)
+                top_idx = int(sorted_preds[0]["label"].split("_")[-1]) if "_" in str(sorted_preds[0]["label"]) else 0
+                all_preds_ids.append(top_idx)
+        else:
+            all_preds_ids.append(0)
 
     print(f"\n推理完成! 耗时: {elapsed:.2f}s, 吞吐量: {throughput:.2f} samples/s")
 

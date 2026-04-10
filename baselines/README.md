@@ -8,15 +8,17 @@
 |------|----------------|------|----------|
 | BERT | `bert-base-uncased` | Google经典预训练模型 | 2018 |
 | RoBERTa | `roberta-base` | Facebook优化版BERT | 2019 |
-| DeBERTa-v3 | `microsoft/deberta-v3-base` | Microsoft增强版Transformer | 2021 (广泛使用于2022-2024) |
-| ERNIE-2.0 | `nghuyong/ernie-2.0-base-en` | 百度知识增强预训练模型 | 2022 |
-| MacBERT | `hfl/chinese-macbert-base` | 哈工大中文BERT替代模型 | 2020 (广泛使用于2022-2024) |
+| DeBERTa-v3 | `microsoft/deberta-v3-base` | Microsoft增强版Transformer | 2021 |
+| ERNIE-2.0 | `nghuyong/ernie-2.0-base-en` | 百度知识增强预训练模型 | 2019 |
+| MacBERT | `hfl/chinese-macbert-base` | 哈工大中文BERT替代模型 | 2020 |
 | XLNet | `xlnet-base-cased` | Google置换自回归模型 | 2019 |
 | ALBERT | `albert-base-v2` | Google轻量级BERT | 2019 |
 | ELECTRA | `google/electra-base-discriminator` | Google高效预训练模型 | 2020 |
 | CodeBERT | `microsoft/codebert-base` | 微软代码理解预训练模型 | 2020 |
 | GraphCodeBERT | `microsoft/graphcodebert-base` | 微软代码结构理解模型 | 2021 |
 | UnixCoder | `Microsoft/unixcoder-base` | 微软统一代码理解模型 | 2022 |
+
+> ⚠️ 当前 baseline 脚本为 **零样本评估**（不对模型做微调），因此准确率接近随机水平。如需微调，请使用 `src/train_bert.py` 或 `src/train_bert_lightning.py`。
 
 ## 🚀 快速开始
 

@@ -7,7 +7,7 @@
 import json
 import os
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import torch
@@ -40,7 +40,7 @@ def _compute_class_weights(
     )
     tensor = torch.tensor(weights, dtype=torch.float)
     print(f"[Info] 使用 class weights: {tensor.tolist()}")
-    return tensor
+    return tensor  # type: ignore[return-value]
 
 
 def _save_artifacts(
