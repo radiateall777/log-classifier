@@ -7,10 +7,17 @@ requires-python = ">=3.12"
 dependencies = [
     "accelerate>=1.13.0",
     "datasets>=4.8.4",
+    "fasttext>=0.9.3",
+    "lightgbm>=4.0.0",
+    "protobuf>=7.34.1",
     "pytorch-lightning>=2.0.0",
     "scikit-learn>=1.8.0",
+    "sentence-transformers>=3.0.0",
+    "sentencepiece>=0.2.1",
+    "setfit>=1.0.0",
     "torch>=2.11.0",
     "transformers>=5.5.0",
+    "xgboost>=2.0.0",
 ]
 
 [build-system]

@@ -11,3 +11,5 @@ output/
 /notebooks
 /configs
 /scripts
+/baseline_results
+/baselines
