@@ -1,0 +1,47 @@
+{
+  "model_name": "roberta-base",
+  "label_list": [
+    "Java Spring相关",
+    "代码补全",
+    "动态规划",
+    "排序算法",
+    "搜索算法"
+  ],
+  "label2id": {
+    "Java Spring相关": 0,
+    "代码补全": 1,
+    "动态规划": 2,
+    "排序算法": 3,
+    "搜索算法": 4
+  },
+  "id2label": {
+    "0": "Java Spring相关",
+    "1": "代码补全",
+    "2": "动态规划",
+    "3": "排序算法",
+    "4": "搜索算法"
+  },
+  "train_samples": 3999,
+  "dev_samples": 501,
+  "test_samples": 500,
+  "num_labels": 5,
+  "val_metrics": {
+    "eval_loss": 0.5647414326667786,
+    "eval_accuracy": 0.8962075848303394,
+    "eval_macro_f1": 0.8955185272633719,
+    "eval_weighted_f1": 0.8955873525582552,
+    "eval_runtime": 1.2814,
+    "eval_samples_per_second": 390.982,
+    "eval_steps_per_second": 12.486,
+    "epoch": 16.0
+  },
+  "test_metrics": {
+    "accuracy": 0.894,
+    "macro_f1": 0.8927167131450309,
+    "weighted_f1": 0.892716713145031,
+    "precision": 0.892488164442786,
+    "recall": 0.8940000000000001
+  },
+  "train_elapsed_seconds": 1191.375,
+  "test_throughput_samples_per_sec": 391.65
+}

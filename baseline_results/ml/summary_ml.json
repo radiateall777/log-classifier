@@ -1,0 +1,63 @@
+[
+  {
+    "method": "fasttext",
+    "method_name": "FastText",
+    "accuracy": 0.896,
+    "macro_f1": 0.8947726199954822,
+    "weighted_f1": 0.8947726199954821,
+    "macro_precision": 0.8952160446377677,
+    "macro_recall": 0.8960000000000001,
+    "dev_macro_f1": 0.8870973717013589,
+    "best_params": {
+      "lr": 0.8,
+      "epoch": 25
+    },
+    "train_time_seconds": 6.087684392929077,
+    "throughput": 5027.019771031891
+  },
+  {
+    "method": "tfidf_svm",
+    "method_name": "TF-IDF + Linear SVM",
+    "accuracy": 0.892,
+    "macro_f1": 0.8907125169153701,
+    "weighted_f1": 0.8907125169153701,
+    "macro_precision": 0.8906974917098459,
+    "macro_recall": 0.892,
+    "dev_macro_f1": 0.878535944661445,
+    "best_params": {
+      "C": 10.0
+    },
+    "train_time_seconds": 0.6700670719146729,
+    "throughput": 422047.0919702153
+  },
+  {
+    "method": "tfidf_lr",
+    "method_name": "TF-IDF + Logistic Regression",
+    "accuracy": 0.89,
+    "macro_f1": 0.8887384741027159,
+    "weighted_f1": 0.8887384741027158,
+    "macro_precision": 0.8903398283766538,
+    "macro_recall": 0.8899999999999999,
+    "dev_macro_f1": 0.8723787765980955,
+    "best_params": {
+      "C": 10.0
+    },
+    "train_time_seconds": 37.677350997924805,
+    "throughput": 183863.9312642469
+  },
+  {
+    "method": "tfidf_nb",
+    "method_name": "TF-IDF + Naive Bayes",
+    "accuracy": 0.876,
+    "macro_f1": 0.874321907723042,
+    "weighted_f1": 0.874321907723042,
+    "macro_precision": 0.8761919174176811,
+    "macro_recall": 0.876,
+    "dev_macro_f1": 0.8387935179085959,
+    "best_params": {
+      "alpha": 0.01
+    },
+    "train_time_seconds": 0.0221860408782959,
+    "throughput": 323335.1834720937
+  }
+]

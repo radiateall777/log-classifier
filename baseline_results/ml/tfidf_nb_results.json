@@ -1,0 +1,66 @@
+{
+  "metrics": {
+    "accuracy": 0.876,
+    "macro_f1": 0.874321907723042,
+    "weighted_f1": 0.874321907723042,
+    "macro_precision": 0.8761919174176811,
+    "macro_recall": 0.876
+  },
+  "classification_report": {
+    "Java Spring相关": {
+      "precision": 0.9238095238095239,
+      "recall": 0.97,
+      "f1-score": 0.9463414634146341,
+      "support": 100.0
+    },
+    "代码补全": {
+      "precision": 0.8348623853211009,
+      "recall": 0.91,
+      "f1-score": 0.8708133971291866,
+      "support": 100.0
+    },
+    "动态规划": {
+      "precision": 0.8476190476190476,
+      "recall": 0.89,
+      "f1-score": 0.8682926829268293,
+      "support": 100.0
+    },
+    "排序算法": {
+      "precision": 0.9175257731958762,
+      "recall": 0.89,
+      "f1-score": 0.9035532994923858,
+      "support": 100.0
+    },
+    "搜索算法": {
+      "precision": 0.8571428571428571,
+      "recall": 0.72,
+      "f1-score": 0.782608695652174,
+      "support": 100.0
+    },
+    "accuracy": 0.876,
+    "macro avg": {
+      "precision": 0.8761919174176811,
+      "recall": 0.876,
+      "f1-score": 0.874321907723042,
+      "support": 500.0
+    },
+    "weighted avg": {
+      "precision": 0.8761919174176811,
+      "recall": 0.876,
+      "f1-score": 0.874321907723042,
+      "support": 500.0
+    }
+  },
+  "method": "tfidf_nb",
+  "method_name": "TF-IDF + Naive Bayes",
+  "train_time_seconds": 0.0221860408782959,
+  "infer_time_seconds": 0.0015463829040527344,
+  "throughput_samples_per_second": 323335.1834720937,
+  "tfidf_features": 50000,
+  "test_samples": 500,
+  "num_labels": 5,
+  "best_params": {
+    "alpha": 0.01
+  },
+  "dev_macro_f1": 0.8387935179085959
+}

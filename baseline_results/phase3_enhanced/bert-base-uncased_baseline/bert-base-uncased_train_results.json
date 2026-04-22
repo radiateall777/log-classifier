@@ -1,0 +1,47 @@
+{
+  "model_name": "bert-base-uncased",
+  "label_list": [
+    "Java Spring相关",
+    "代码补全",
+    "动态规划",
+    "排序算法",
+    "搜索算法"
+  ],
+  "label2id": {
+    "Java Spring相关": 0,
+    "代码补全": 1,
+    "动态规划": 2,
+    "排序算法": 3,
+    "搜索算法": 4
+  },
+  "id2label": {
+    "0": "Java Spring相关",
+    "1": "代码补全",
+    "2": "动态规划",
+    "3": "排序算法",
+    "4": "搜索算法"
+  },
+  "train_samples": 3999,
+  "dev_samples": 501,
+  "test_samples": 500,
+  "num_labels": 5,
+  "val_metrics": {
+    "eval_loss": 0.48607978224754333,
+    "eval_accuracy": 0.8982035928143712,
+    "eval_macro_f1": 0.8972315473369801,
+    "eval_weighted_f1": 0.8973169135099601,
+    "eval_runtime": 1.9707,
+    "eval_samples_per_second": 254.223,
+    "eval_steps_per_second": 8.119,
+    "epoch": 12.0
+  },
+  "test_metrics": {
+    "accuracy": 0.892,
+    "macro_f1": 0.8912409247272699,
+    "weighted_f1": 0.8912409247272698,
+    "precision": 0.894838989886054,
+    "recall": 0.892
+  },
+  "train_elapsed_seconds": 696.878,
+  "test_throughput_samples_per_sec": 278.18
+}
