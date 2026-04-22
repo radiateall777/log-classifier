@@ -9,7 +9,7 @@
 5. 选最佳元学习器，在 test 上评估并保存所有模型的结果。
 
 用法::
-    python3 baselines/run_ensemble.py \\
+    python3 baselines/python/ensemble.py \\
         --transformer_oof_dirs \\
             ./baseline_results/phase_c_sota/roberta_base_sota \\
             ./baseline_results/phase_c_sota/roberta_large_sota \\
@@ -27,7 +27,7 @@ import sys
 import time
 from typing import Any, Dict, List, Tuple
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression

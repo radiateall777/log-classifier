@@ -2,13 +2,13 @@
 
 核心思想：K-fold × 多 seed 产生 K*S 个**独立**训练任务（互不依赖），
 按 GPU 数量分发给 N 个 subprocess，每个 subprocess 通过 `CUDA_VISIBLE_DEVICES`
-独占一张 GPU，跑 `run_fold_worker.py`。
+独占一张 GPU，跑 `_fold_worker.py`。
 
 加速近线性：4 GPU 并行约 3.5-4× 提速，对精度没有任何影响（每折与单 GPU
 版本完全一致）。
 
 用法：
-    python3 baselines/run_kfold_parallel.py \\
+    python3 baselines/python/train_kfold.py \\
         --model_name roberta-large \\
         --output_dir ./baseline_results/roberta_large_sota \\
         --gpus 3 4 6 7 \\
@@ -29,7 +29,7 @@ from typing import Any, Dict, List, Tuple
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
 import numpy as np
 from sklearn.metrics import (
@@ -44,7 +44,7 @@ from log_classifier.data.preprocess import (
 )
 
 
-WORKER_SCRIPT = os.path.join(os.path.dirname(__file__), "run_fold_worker.py")
+WORKER_SCRIPT = os.path.join(os.path.dirname(__file__), "_fold_worker.py")
 
 
 # ------------------------------------------------------------------

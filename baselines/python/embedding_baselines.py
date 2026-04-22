@@ -4,8 +4,8 @@ Generates dense embeddings via pretrained Sentence-Transformers,
 then trains SVM / LR / XGBoost / LightGBM on top.
 
 Usage::
-    python3 baselines/run_embedding_baselines.py --method all
-    python3 baselines/run_embedding_baselines.py --method sbert_svm
+    python3 baselines/python/embedding_baselines.py --method all
+    python3 baselines/python/embedding_baselines.py --method sbert_svm
 """
 
 import argparse
@@ -16,7 +16,7 @@ import time
 from typing import Any, Dict, List, Tuple
 
 os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression

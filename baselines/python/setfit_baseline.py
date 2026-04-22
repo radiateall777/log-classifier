@@ -7,8 +7,8 @@ small datasets (100-5000 samples).
 Tunstall et al., "Efficient Few-Shot Learning Without Prompts", 2022.
 
 Usage::
-    python3 baselines/run_setfit_baseline.py
-    python3 baselines/run_setfit_baseline.py --model_name BAAI/bge-base-en-v1.5
+    python3 baselines/python/setfit_baseline.py
+    python3 baselines/python/setfit_baseline.py --model_name BAAI/bge-base-en-v1.5
 """
 
 import argparse
@@ -18,7 +18,7 @@ import sys
 import time
 
 os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
 import numpy as np
 from sklearn.metrics import (

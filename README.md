@@ -19,9 +19,12 @@ log-classifier/
 │   │   └── utils/            # 随机种子设置
 │   ├── train_bert.py         # HuggingFace Trainer 训练入口
 │   └── train_bert_lightning.py  # PyTorch Lightning 训练入口
-├── baselines/                 # Baseline 对比实验
-│   ├── run_baseline.py       # 单模型评估脚本
-│   └── run_all_baselines.sh  # 一键运行所有 baseline
+├── baselines/                 # Baseline 对比实验（按 Phase 组织，详见 baselines/README.md）
+│   ├── phase0_ml.sh           # Phase 0 · 传统 ML
+│   ├── phase3_enhanced.sh     # Phase 3 · Transformer + 训练技巧矩阵
+│   ├── phase_c_kfold.sh       # Phase C · K-fold × 多 seed × 多 GPU
+│   ├── phase_d_stacking.sh   # Phase D · Stacking 集成
+│   └── python/                # Python 入口
 ├── data/
 │   └── random_samples.jsonl   # 5000 条样本，5分类 (label3)
 └── baseline_results/          # baseline 运行结果
@@ -55,12 +58,20 @@ python src/train_bert_lightning.py
 ### 运行 Baseline 对比
 
 ```bash
-# 单模型
-python baselines/run_baseline.py --model bert-base-uncased
+# Phase 0 · 传统 ML baseline
+bash baselines/phase0_ml.sh
 
-# 所有 baseline
-bash baselines/run_all_baselines.sh
+# Phase 3 · Transformer 训练技巧矩阵
+CUDA_VISIBLE_DEVICES=5 bash baselines/phase3_enhanced.sh
+
+# Phase C · K-fold × 多 seed × 多 GPU 并行
+GPUS="3 5" bash baselines/phase_c_kfold.sh
+
+# Phase D · Stacking 集成（秒级）
+bash baselines/phase_d_stacking.sh
 ```
+
+详细说明见 [`baselines/README.md`](./baselines/README.md)。
 
 ## ⚙️ 配置说明
 

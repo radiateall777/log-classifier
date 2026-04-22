@@ -7,7 +7,7 @@
   - 手动整理结果后
 
 用法::
-    python3 baselines/regen_summary.py
+    python3 baselines/python/regen_summary.py
 """
 
 import glob
@@ -16,9 +16,9 @@ import os
 import sys
 from typing import Any, Dict, List
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
-BASE = os.path.join(os.path.dirname(__file__), "..", "baseline_results")
+BASE = os.path.join(os.path.dirname(__file__), "..", "..", "baseline_results")
 BASE = os.path.abspath(BASE)
 
 
@@ -318,22 +318,18 @@ baseline_results/
 
 ```bash
 # Phase 0 · ML baseline
-bash baselines/run_all_ml_baselines.sh
+bash baselines/phase0_ml.sh
 
-# Phase 3 · Focal/FGM 增强（推荐配置：max_length=512, patience=5）
-bash baselines/run_enhanced_train.sh
+# Phase 3 · Focal/FGM 增强矩阵
+CUDA_VISIBLE_DEVICES=5 bash baselines/phase3_enhanced.sh
 
-# Phase C · K-fold × 多 seed SOTA
-CUDA_VISIBLE_DEVICES=5 bash baselines/run_sota.sh
-# 仅跑 base 模型：
-SKIP_LARGE=1 bash baselines/run_sota.sh
+# Phase C · K-fold × 多 seed（多 GPU 并行，默认 roberta-base）
+GPUS="3 5" bash baselines/phase_c_kfold.sh
+# 切换 backbone：
+MODEL=roberta-large GPUS="3 4 6 7" BATCH=8 GRAD_ACC=2 bash baselines/phase_c_kfold.sh
 
-# Phase D · Stacking 集成（默认输出到 baseline_results/phase_d_stacking/）
-.venv/bin/python3 baselines/run_ensemble.py \\
-    --transformer_oof_dirs \\
-        ./baseline_results/phase_c_sota/roberta_base_sota \\
-        ./baseline_results/phase_c_sota/roberta_large_sota \\
-    --use_xgb --use_lgb
+# Phase D · Stacking 集成（自动刷新 leaderboard）
+bash baselines/phase_d_stacking.sh
 ```
 
 ## 复现历史结果
@@ -343,7 +339,7 @@ Phase C 使用 `test_split_seed=42`（固定 test 集）+ 多训练 seed（`42 1
 
 ---
 
-_此 README 由 `baselines/regen_summary.py` 自动生成，请勿手动编辑。_
+_此 README 由 `baselines/python/regen_summary.py` 自动生成，请勿手动编辑。_
 """
     path = os.path.join(BASE, "README.md")
     with open(path, "w", encoding="utf-8") as f:

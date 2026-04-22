@@ -5,7 +5,7 @@
 主进程读取后聚合为 OOF + K×S 平均 test 概率。
 
 用法示例：
-    CUDA_VISIBLE_DEVICES=3 python baselines/run_fold_worker.py \\
+    CUDA_VISIBLE_DEVICES=3 python baselines/python/_fold_worker.py \\
         --model_name roberta-large \\
         --seed 42 --fold_idx 0 --kfold_k 5 \\
         --test_split_seed 42 --test_size 0.1 \\
@@ -20,7 +20,7 @@ import sys
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
 import numpy as np
 import torch

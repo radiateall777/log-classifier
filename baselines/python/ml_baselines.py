@@ -8,16 +8,16 @@
 
 用法::
     # 运行单个方法
-    python3 baselines/run_ml_baselines.py --method tfidf_lr
-    python3 baselines/run_ml_baselines.py --method tfidf_svm
-    python3 baselines/run_ml_baselines.py --method tfidf_nb
-    python3 baselines/run_ml_baselines.py --method fasttext
+    python3 baselines/python/ml_baselines.py --method tfidf_lr
+    python3 baselines/python/ml_baselines.py --method tfidf_svm
+    python3 baselines/python/ml_baselines.py --method tfidf_nb
+    python3 baselines/python/ml_baselines.py --method fasttext
 
     # 运行所有 ML 方法
-    python3 baselines/run_ml_baselines.py --method all
+    python3 baselines/python/ml_baselines.py --method all
 
     # 一键脚本
-    bash baselines/run_all_ml_baselines.sh
+    bash baselines/phase0_ml.sh
 """
 
 import argparse

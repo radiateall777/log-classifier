@@ -5,10 +5,10 @@
 
 用法::
     # 单模型
-    python3 baselines/run_baseline_train.py --model_name bert-base-uncased
+    python3 baselines/python/train_single.py --model_name bert-base-uncased
 
     # 全套 Phase A 增强（R-Drop + Label Smoothing + Layerwise LR + EDA 搜索算法 + FGM）
-    python3 baselines/run_baseline_train.py \\
+    python3 baselines/python/train_single.py \\
         --model_name microsoft/deberta-v3-base \\
         --use_adversarial --adversarial_method fgm \\
         --use_rdrop --rdrop_alpha 1.0 \\
@@ -25,7 +25,7 @@ import argparse
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
 import numpy as np
 import torch

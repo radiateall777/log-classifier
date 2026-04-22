@@ -73,7 +73,7 @@ Phase 4  模型集成                      ── 预期 0.95+
 
 **修改文件**：
 - `src/log_classifier/config/config.py` — `ModelConfig.max_length` 默认值 256 → 512
-- `baselines/run_all_baselines_train.sh` — `MAX_LENGTH=512`
+- `baselines/phase3_enhanced.sh` — `MAX_LENGTH=512`
 
 ### 3.2 early_stopping_patience 2 → 5
 
@@ -81,8 +81,8 @@ Phase 4  模型集成                      ── 预期 0.95+
 
 **修改文件**：
 - `src/log_classifier/config/config.py` — `TrainConfig.early_stopping_patience` 默认值 2 → 5
-- `baselines/run_all_baselines_train.sh`
-- `baselines/run_baseline_train.py`
+- `baselines/phase3_enhanced.sh`
+- `baselines/python/train_single.py`
 
 ### 3.3 修复 DeBERTa-v3 等失败模型
 
@@ -92,7 +92,7 @@ DeBERTa-v3 在众多 NLU benchmark 上是 base 级别最强模型。脚本已保
 
 新增实验：在文本前添加 `language:` 和 `dataset:` 元信息，可能帮助区分语义相似的类别（如"搜索算法" vs "动态规划"）。
 
-**运行脚本**：`baselines/run_enhanced_train.sh`（含 4 模型 × 4 策略 + with_meta 对比）
+**运行脚本**：`baselines/phase3_enhanced.sh`（含 4 模型 × 4 策略 + with_meta 对比）
 
 ---
 
@@ -102,10 +102,10 @@ DeBERTa-v3 在众多 NLU benchmark 上是 base 级别最强模型。脚本已保
 
 SetFit 使用 Sentence Transformers 做对比学习 + 轻量分类头，在小数据集（100–5000 样本）上显著优于标准微调。
 
-**新增文件**：`baselines/run_setfit_baseline.py`
+**新增文件**：`baselines/python/setfit_baseline.py`
 
 ```bash
-python3 baselines/run_setfit_baseline.py \
+python3 baselines/python/setfit_baseline.py \
     --model_name sentence-transformers/all-mpnet-base-v2
 ```
 
@@ -119,16 +119,16 @@ python3 baselines/run_setfit_baseline.py \
 - SBERT + XGBoost
 - SBERT + LightGBM
 
-**新增文件**：`baselines/run_embedding_baselines.py`
+**新增文件**：`baselines/python/embedding_baselines.py`
 
 ```bash
-python3 baselines/run_embedding_baselines.py --method all \
+python3 baselines/python/embedding_baselines.py --method all \
     --encoder sentence-transformers/all-mpnet-base-v2
 ```
 
 ### 4.3 依赖
 
-新增依赖：`sentence-transformers`、`setfit`、`xgboost`、`lightgbm`（已更新 `pyproject.toml` 和 `baselines/requirements.txt`）。
+新增依赖：`sentence-transformers`、`setfit`、`xgboost`、`lightgbm`（已更新 `pyproject.toml` 和 `pyproject.toml`）。
 
 ---
 
@@ -143,7 +143,7 @@ python3 baselines/run_embedding_baselines.py --method all \
 公式：`FL(pt) = -α(1-pt)^γ · log(pt)`，默认 `γ=2.0`。
 
 ```bash
-python3 baselines/run_baseline_train.py \
+python3 baselines/python/train_single.py \
     --model_name bert-base-uncased \
     --use_focal_loss --focal_loss_gamma 2.0
 ```
@@ -158,7 +158,7 @@ python3 baselines/run_baseline_train.py \
 - **PGD**（Projected Gradient Descent）：多步扰动，效果更强但更慢
 
 ```bash
-python3 baselines/run_baseline_train.py \
+python3 baselines/python/train_single.py \
     --model_name bert-base-uncased \
     --use_adversarial --adversarial_method fgm
 ```
@@ -190,7 +190,7 @@ TrainConfig 中预留了 `use_layerwise_lr_decay` 和 `layerwise_lr_decay_rate` 
 
 收集多个基模型的预测概率，训练元学习器进行二阶融合。
 
-**新增文件**：`baselines/run_ensemble.py`
+**新增文件**：`baselines/python/ensemble.py`
 
 基模型层（Level-0）：
 - TF-IDF + LR / SVM / NB
@@ -201,7 +201,7 @@ TrainConfig 中预留了 `use_layerwise_lr_decay` 和 `layerwise_lr_decay_rate` 
 - XGBoost（若已安装）
 
 ```bash
-python3 baselines/run_ensemble.py
+python3 baselines/python/ensemble.py
 ```
 
 ---
@@ -216,9 +216,9 @@ python3 baselines/run_ensemble.py
 | `src/log_classifier/training/weighted_trainer.py` | 集成 Focal Loss 和 FGM/PGD 对抗训练 |
 | `src/log_classifier/training/__init__.py` | 更新导出 |
 | `src/log_classifier/pipelines/hf_sequence_classification.py` | 传递新训练配置到 Trainer |
-| `baselines/run_baseline_train.py` | 新增 CLI 参数支持所有增强选项 |
-| `baselines/run_all_baselines_train.sh` | max_length=512, patience=5 |
-| `baselines/requirements.txt` | 新增 4 个依赖 |
+| `baselines/python/train_single.py` | 新增 CLI 参数支持所有增强选项 |
+| `baselines/phase3_enhanced.sh` | max_length=512, patience=5 |
+| `pyproject.toml` | 新增 4 个依赖 |
 | `pyproject.toml` | 新增 4 个依赖 |
 
 ### 新增的文件
@@ -228,11 +228,11 @@ python3 baselines/run_ensemble.py
 | `src/log_classifier/training/focal_loss.py` | Focal Loss 实现 |
 | `src/log_classifier/training/adversarial.py` | FGM / PGD 对抗训练 |
 | `src/log_classifier/data/augmentation.py` | EDA 数据增强 |
-| `baselines/run_setfit_baseline.py` | SetFit 方法 |
-| `baselines/run_embedding_baselines.py` | SBERT 嵌入 + LR/SVM/XGBoost/LightGBM |
-| `baselines/run_ensemble.py` | Stacking 集成 |
-| `baselines/run_enhanced_train.sh` | 增强 Transformer 训练（实验矩阵） |
-| `baselines/run_all_new_baselines.sh` | 一键运行所有新增方法 |
+| `baselines/python/setfit_baseline.py` | SetFit 方法 |
+| `baselines/python/embedding_baselines.py` | SBERT 嵌入 + LR/SVM/XGBoost/LightGBM |
+| `baselines/python/ensemble.py` | Stacking 集成 |
+| `baselines/phase3_enhanced.sh` | 增强 Transformer 训练（实验矩阵） |
+| `baselines/phase2_embedding.sh` | 一键运行所有新增方法 |
 
 ---
 
@@ -249,7 +249,7 @@ pip install -e .
 ### 8.2 快速运行所有新方法（无需 GPU）
 
 ```bash
-bash baselines/run_all_new_baselines.sh
+bash baselines/phase2_embedding.sh
 ```
 
 包含：SBERT 嵌入方法、SetFit、Stacking 集成，最终输出全局排行榜。
@@ -257,7 +257,7 @@ bash baselines/run_all_new_baselines.sh
 ### 8.3 增强 Transformer 训练（需要 GPU）
 
 ```bash
-bash baselines/run_enhanced_train.sh
+bash baselines/phase3_enhanced.sh
 ```
 
 包含：4 模型（BERT / DeBERTa / RoBERTa / DistilBERT）× 4 策略（baseline / focal / fgm / focal+fgm）+ with_meta 对比。
@@ -266,16 +266,16 @@ bash baselines/run_enhanced_train.sh
 
 ```bash
 # SetFit
-python3 baselines/run_setfit_baseline.py
+python3 baselines/python/setfit_baseline.py
 
 # SBERT 嵌入 + 全部分类器
-python3 baselines/run_embedding_baselines.py --method all
+python3 baselines/python/embedding_baselines.py --method all
 
 # Stacking 集成
-python3 baselines/run_ensemble.py
+python3 baselines/python/ensemble.py
 
 # 单模型增强训练（Focal Loss + FGM）
-python3 baselines/run_baseline_train.py \
+python3 baselines/python/train_single.py \
     --model_name bert-base-uncased \
     --max_length 512 \
     --use_focal_loss \
@@ -287,31 +287,27 @@ python3 baselines/run_baseline_train.py \
 
 ```bash
 # ML 方法（不变）
-bash baselines/run_all_ml_baselines.sh
+bash baselines/phase0_ml.sh
 
 # Transformer（已更新为 max_length=512, patience=5）
-bash baselines/run_all_baselines_train.sh
+bash baselines/phase3_enhanced.sh
 ```
 
 ---
 
 ## 9 baselines/ 目录索引
 
-| 文件 | 类别 | 说明 |
-|------|------|------|
-| **脚本入口** | | |
-| `run_all_new_baselines.sh` | 新增 | 一键运行所有新增方法 + 全局排行榜 |
-| `run_enhanced_train.sh` | 新增 | 增强 Transformer 实验矩阵 |
-| `run_all_baselines_train.sh` | 原有 | Transformer baseline 批量训练 |
-| `run_all_ml_baselines.sh` | 原有 | ML baseline 批量运行 |
-| `run_all_baselines.sh` | 原有 | 旧版零样本评估 |
-| **Python 脚本** | | |
-| `run_setfit_baseline.py` | Phase 2 | SetFit 小数据集分类 |
-| `run_embedding_baselines.py` | Phase 2 | SBERT 嵌入 + LR/SVM/XGBoost/LightGBM |
-| `run_ensemble.py` | Phase 4 | Stacking 集成 |
-| `run_baseline_train.py` | 原有(已增强) | 单模型 Transformer 训练 |
-| `run_ml_baselines.py` | 原有 | TF-IDF + FastText 方法 |
-| `run_baseline.py` | 原有 | 旧版零样本评估 |
-| **配置** | | |
-| `requirements.txt` | 已更新 | Python 依赖 |
-| `README.md` | 原有 | 原始 baseline 说明 |
+> 本节内容已并入 [`baselines/README.md`](./baselines/README.md)，那里始终保持最新。
+> 当前结构（Phase-based）：
+>
+> ```
+> baselines/
+> ├── _common.sh              # 公共 bash 工具
+> ├── phase0_ml.sh            # TF-IDF / FastText
+> ├── phase2_embedding.sh     # SBERT / SetFit（可选）
+> ├── phase3_enhanced.sh      # Transformer × 训练技巧矩阵
+> ├── phase_c_kfold.sh        # K-fold × 多 seed × 多 GPU 并行
+> ├── phase_d_stacking.sh     # Stacking 集成
+> ├── watch_phase_d.sh        # 自动 watcher（等 Phase C 完成 → Phase D → 汇总）
+> └── python/                 # 8 个 Python 入口（train_single / train_kfold / ensemble / …）
+> ```
