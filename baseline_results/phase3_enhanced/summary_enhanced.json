@@ -1,0 +1,86 @@
+[
+  {
+    "experiment": "bert-base-uncased_fgm",
+    "backbone": "bert-base-uncased",
+    "strategy": "fgm",
+    "accuracy": 0.918,
+    "macro_f1": 0.9172247002256603,
+    "weighted_f1": 0.9172247002256603,
+    "val_macro_f1": 0.9152608349476477,
+    "best_epoch": 28.0,
+    "train_elapsed_seconds": 2960.03,
+    "test_throughput_samples_per_sec": 250.45
+  },
+  {
+    "experiment": "bert-base-uncased_focal_fgm",
+    "backbone": "bert-base-uncased",
+    "strategy": "focal_fgm",
+    "accuracy": 0.91,
+    "macro_f1": 0.9095021604011977,
+    "weighted_f1": 0.9095021604011977,
+    "val_macro_f1": 0.9099022659676255,
+    "best_epoch": 20.0,
+    "train_elapsed_seconds": 1937.517,
+    "test_throughput_samples_per_sec": 371.4
+  },
+  {
+    "experiment": "bert-base-uncased_focal",
+    "backbone": "bert-base-uncased",
+    "strategy": "focal",
+    "accuracy": 0.902,
+    "macro_f1": 0.9012019832764112,
+    "weighted_f1": 0.9012019832764112,
+    "val_macro_f1": 0.8998366551610276,
+    "best_epoch": 16.0,
+    "train_elapsed_seconds": 920.364,
+    "test_throughput_samples_per_sec": 249.39
+  },
+  {
+    "experiment": "roberta-base_fgm",
+    "backbone": "roberta-base",
+    "strategy": "fgm",
+    "accuracy": 0.894,
+    "macro_f1": 0.8927167131450309,
+    "weighted_f1": 0.892716713145031,
+    "val_macro_f1": 0.8955185272633719,
+    "best_epoch": 16.0,
+    "train_elapsed_seconds": 1191.375,
+    "test_throughput_samples_per_sec": 391.65
+  },
+  {
+    "experiment": "bert-base-uncased_baseline",
+    "backbone": "bert-base-uncased",
+    "strategy": "baseline",
+    "accuracy": 0.892,
+    "macro_f1": 0.8912409247272699,
+    "weighted_f1": 0.8912409247272698,
+    "val_macro_f1": 0.8972315473369801,
+    "best_epoch": 12.0,
+    "train_elapsed_seconds": 696.878,
+    "test_throughput_samples_per_sec": 278.18
+  },
+  {
+    "experiment": "roberta-base_focal",
+    "backbone": "roberta-base",
+    "strategy": "focal",
+    "accuracy": 0.882,
+    "macro_f1": 0.8796876494660317,
+    "weighted_f1": 0.8796876494660317,
+    "val_macro_f1": 0.8794392700849298,
+    "best_epoch": 12.0,
+    "train_elapsed_seconds": 485.466,
+    "test_throughput_samples_per_sec": 394.23
+  },
+  {
+    "experiment": "roberta-base_baseline",
+    "backbone": "roberta-base",
+    "strategy": "baseline",
+    "accuracy": 0.874,
+    "macro_f1": 0.8736354667682855,
+    "weighted_f1": 0.8736354667682854,
+    "val_macro_f1": 0.8811179629658067,
+    "best_epoch": 17.0,
+    "train_elapsed_seconds": 679.128,
+    "test_throughput_samples_per_sec": 396.23
+  }
+]

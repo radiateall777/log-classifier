@@ -1,0 +1,297 @@
+{
+  "model_name": "roberta-base",
+  "k_folds": 5,
+  "seeds": [
+    42,
+    123,
+    2024
+  ],
+  "num_models": 15,
+  "num_failed": 0,
+  "gpus": [
+    3,
+    5
+  ],
+  "max_parallel": 2,
+  "label_list": [
+    "Java Spring相关",
+    "代码补全",
+    "动态规划",
+    "排序算法",
+    "搜索算法"
+  ],
+  "label2id": {
+    "Java Spring相关": 0,
+    "代码补全": 1,
+    "动态规划": 2,
+    "排序算法": 3,
+    "搜索算法": 4
+  },
+  "id2label": {
+    "0": "Java Spring相关",
+    "1": "代码补全",
+    "2": "动态规划",
+    "3": "排序算法",
+    "4": "搜索算法"
+  },
+  "config": {
+    "max_length": 512,
+    "train_batch_size": 16,
+    "gradient_accumulation_steps": 1,
+    "learning_rate": 2e-05,
+    "bf16": false,
+    "use_focal_loss": false,
+    "use_adversarial": true,
+    "adversarial_method": "fgm",
+    "use_layerwise_lr_decay": true,
+    "label_smoothing": 0.1,
+    "use_rdrop": true,
+    "rdrop_alpha": 1.0,
+    "use_eda": true,
+    "augment_target_classes": [
+      "搜索算法"
+    ]
+  },
+  "oof_metrics": {
+    "accuracy": 0.8944444444444445,
+    "macro_f1": 0.8935248073517433,
+    "weighted_f1": 0.8935248073517433,
+    "precision": 0.8932693088685845,
+    "recall": 0.8944444444444445
+  },
+  "oof_classification_report": {
+    "Java Spring相关": {
+      "precision": 0.9674267100977199,
+      "recall": 0.99,
+      "f1-score": 0.9785831960461285,
+      "support": 900.0
+    },
+    "代码补全": {
+      "precision": 0.9278688524590164,
+      "recall": 0.9433333333333334,
+      "f1-score": 0.9355371900826446,
+      "support": 900.0
+    },
+    "动态规划": {
+      "precision": 0.8389553862894451,
+      "recall": 0.8566666666666667,
+      "f1-score": 0.8477185266630016,
+      "support": 900.0
+    },
+    "排序算法": {
+      "precision": 0.898360655737705,
+      "recall": 0.9133333333333333,
+      "f1-score": 0.9057851239669421,
+      "support": 900.0
+    },
+    "搜索算法": {
+      "precision": 0.8337349397590361,
+      "recall": 0.7688888888888888,
+      "f1-score": 0.8,
+      "support": 900.0
+    },
+    "accuracy": 0.8944444444444445,
+    "macro avg": {
+      "precision": 0.8932693088685845,
+      "recall": 0.8944444444444445,
+      "f1-score": 0.8935248073517433,
+      "support": 4500.0
+    },
+    "weighted avg": {
+      "precision": 0.8932693088685845,
+      "recall": 0.8944444444444445,
+      "f1-score": 0.8935248073517433,
+      "support": 4500.0
+    }
+  },
+  "test_ensemble_metrics": {
+    "accuracy": 0.906,
+    "macro_f1": 0.9049754257565988,
+    "weighted_f1": 0.9049754257565988,
+    "precision": 0.9054273538231709,
+    "recall": 0.9059999999999999
+  },
+  "test_ensemble_classification_report": {
+    "Java Spring相关": {
+      "precision": 0.9801980198019802,
+      "recall": 0.99,
+      "f1-score": 0.9850746268656716,
+      "support": 100.0
+    },
+    "代码补全": {
+      "precision": 0.9423076923076923,
+      "recall": 0.98,
+      "f1-score": 0.9607843137254902,
+      "support": 100.0
+    },
+    "动态规划": {
+      "precision": 0.8285714285714286,
+      "recall": 0.87,
+      "f1-score": 0.848780487804878,
+      "support": 100.0
+    },
+    "排序算法": {
+      "precision": 0.9108910891089109,
+      "recall": 0.92,
+      "f1-score": 0.9154228855721394,
+      "support": 100.0
+    },
+    "搜索算法": {
+      "precision": 0.8651685393258427,
+      "recall": 0.77,
+      "f1-score": 0.8148148148148148,
+      "support": 100.0
+    },
+    "accuracy": 0.906,
+    "macro avg": {
+      "precision": 0.9054273538231709,
+      "recall": 0.9059999999999999,
+      "f1-score": 0.9049754257565988,
+      "support": 500.0
+    },
+    "weighted avg": {
+      "precision": 0.905427353823171,
+      "recall": 0.906,
+      "f1-score": 0.9049754257565988,
+      "support": 500.0
+    }
+  },
+  "per_run_summaries": [
+    {
+      "seed": 42,
+      "fold": 1,
+      "val_macro_f1": 0.8882134556770325,
+      "test_macro_f1": 0.8943594694137573,
+      "test_accuracy": 0.8960000276565552,
+      "train_elapsed_seconds": 2650.382080078125,
+      "gpu_id": 3
+    },
+    {
+      "seed": 42,
+      "fold": 2,
+      "val_macro_f1": 0.8919917941093445,
+      "test_macro_f1": 0.911329984664917,
+      "test_accuracy": 0.9120000004768372,
+      "train_elapsed_seconds": 3504.818115234375,
+      "gpu_id": 5
+    },
+    {
+      "seed": 42,
+      "fold": 3,
+      "val_macro_f1": 0.9053053259849548,
+      "test_macro_f1": 0.8895622491836548,
+      "test_accuracy": 0.8899999856948853,
+      "train_elapsed_seconds": 3864.2509765625,
+      "gpu_id": 3
+    },
+    {
+      "seed": 42,
+      "fold": 4,
+      "val_macro_f1": 0.8926191926002502,
+      "test_macro_f1": 0.8995608687400818,
+      "test_accuracy": 0.8999999761581421,
+      "train_elapsed_seconds": 3294.18994140625,
+      "gpu_id": 5
+    },
+    {
+      "seed": 42,
+      "fold": 5,
+      "val_macro_f1": 0.8966964483261108,
+      "test_macro_f1": 0.8862334489822388,
+      "test_accuracy": 0.8880000114440918,
+      "train_elapsed_seconds": 2848.593994140625,
+      "gpu_id": 3
+    },
+    {
+      "seed": 123,
+      "fold": 1,
+      "val_macro_f1": 0.8953831791877747,
+      "test_macro_f1": 0.9050620198249817,
+      "test_accuracy": 0.906000018119812,
+      "train_elapsed_seconds": 2882.658935546875,
+      "gpu_id": 5
+    },
+    {
+      "seed": 123,
+      "fold": 2,
+      "val_macro_f1": 0.885201632976532,
+      "test_macro_f1": 0.8954319953918457,
+      "test_accuracy": 0.8960000276565552,
+      "train_elapsed_seconds": 3044.217041015625,
+      "gpu_id": 3
+    },
+    {
+      "seed": 123,
+      "fold": 3,
+      "val_macro_f1": 0.8977907299995422,
+      "test_macro_f1": 0.8909181356430054,
+      "test_accuracy": 0.8920000195503235,
+      "train_elapsed_seconds": 3909.72998046875,
+      "gpu_id": 5
+    },
+    {
+      "seed": 123,
+      "fold": 4,
+      "val_macro_f1": 0.8975642323493958,
+      "test_macro_f1": 0.9052226543426514,
+      "test_accuracy": 0.906000018119812,
+      "train_elapsed_seconds": 2637.64794921875,
+      "gpu_id": 3
+    },
+    {
+      "seed": 123,
+      "fold": 5,
+      "val_macro_f1": 0.8808430433273315,
+      "test_macro_f1": 0.890926718711853,
+      "test_accuracy": 0.8920000195503235,
+      "train_elapsed_seconds": 2670.654052734375,
+      "gpu_id": 5
+    },
+    {
+      "seed": 2024,
+      "fold": 1,
+      "val_macro_f1": 0.8904244303703308,
+      "test_macro_f1": 0.8953624963760376,
+      "test_accuracy": 0.8960000276565552,
+      "train_elapsed_seconds": 4049.6650390625,
+      "gpu_id": 3
+    },
+    {
+      "seed": 2024,
+      "fold": 2,
+      "val_macro_f1": 0.8952492475509644,
+      "test_macro_f1": 0.894659698009491,
+      "test_accuracy": 0.8960000276565552,
+      "train_elapsed_seconds": 3080.364013671875,
+      "gpu_id": 5
+    },
+    {
+      "seed": 2024,
+      "fold": 3,
+      "val_macro_f1": 0.8938730955123901,
+      "test_macro_f1": 0.9012786746025085,
+      "test_accuracy": 0.9020000100135803,
+      "train_elapsed_seconds": 3644.501953125,
+      "gpu_id": 3
+    },
+    {
+      "seed": 2024,
+      "fold": 4,
+      "val_macro_f1": 0.8733959794044495,
+      "test_macro_f1": 0.8888310194015503,
+      "test_accuracy": 0.8899999856948853,
+      "train_elapsed_seconds": 3285.240966796875,
+      "gpu_id": 5
+    },
+    {
+      "seed": 2024,
+      "fold": 5,
+      "val_macro_f1": 0.8955666422843933,
+      "test_macro_f1": 0.8839756846427917,
+      "test_accuracy": 0.8840000033378601,
+      "train_elapsed_seconds": 3078.610107421875,
+      "gpu_id": 5
+    }
+  ],
+  "total_elapsed_seconds": 26030.51
+}

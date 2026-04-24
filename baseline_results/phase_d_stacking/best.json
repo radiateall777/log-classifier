@@ -1,0 +1,124 @@
+{
+  "base_models": [
+    "tfidf_lr",
+    "tfidf_svm",
+    "tfidf_nb",
+    "fasttext",
+    "roberta-base",
+    "roberta-large"
+  ],
+  "stacked_features": 30,
+  "leaderboard": [
+    {
+      "method": "stack_lr_c10",
+      "method_name": "Stacking (stack_lr_c10)",
+      "metrics": {
+        "accuracy": 0.926,
+        "macro_f1": 0.9256295880805052,
+        "weighted_f1": 0.9256295880805052,
+        "macro_precision": 0.9254788695560496,
+        "macro_recall": 0.9259999999999999
+      }
+    },
+    {
+      "method": "stack_lr_c1",
+      "method_name": "Stacking (stack_lr_c1)",
+      "metrics": {
+        "accuracy": 0.924,
+        "macro_f1": 0.9236283802329819,
+        "weighted_f1": 0.923628380232982,
+        "macro_precision": 0.9234740039525168,
+        "macro_recall": 0.9239999999999998
+      }
+    },
+    {
+      "method": "soft_vote",
+      "method_name": "Soft Voting (average probs)",
+      "metrics": {
+        "accuracy": 0.924,
+        "macro_f1": 0.9234516893805225,
+        "weighted_f1": 0.9234516893805226,
+        "macro_precision": 0.9234761806351413,
+        "macro_recall": 0.924
+      }
+    },
+    {
+      "method": "stack_xgb",
+      "method_name": "Stacking (stack_xgb)",
+      "metrics": {
+        "accuracy": 0.918,
+        "macro_f1": 0.9179164828191798,
+        "weighted_f1": 0.9179164828191799,
+        "macro_precision": 0.9182543533509469,
+        "macro_recall": 0.9179999999999999
+      }
+    },
+    {
+      "method": "stack_lgb",
+      "method_name": "Stacking (stack_lgb)",
+      "metrics": {
+        "accuracy": 0.916,
+        "macro_f1": 0.9161563261853825,
+        "weighted_f1": 0.9161563261853823,
+        "macro_precision": 0.9163648247177658,
+        "macro_recall": 0.916
+      }
+    }
+  ],
+  "best": {
+    "method": "stack_lr_c10",
+    "method_name": "Stacking (stack_lr_c10)",
+    "metrics": {
+      "accuracy": 0.926,
+      "macro_f1": 0.9256295880805052,
+      "weighted_f1": 0.9256295880805052,
+      "macro_precision": 0.9254788695560496,
+      "macro_recall": 0.9259999999999999
+    },
+    "classification_report": {
+      "Java Spring相关": {
+        "precision": 0.9801980198019802,
+        "recall": 0.99,
+        "f1-score": 0.9850746268656716,
+        "support": 100.0
+      },
+      "代码补全": {
+        "precision": 0.9320388349514563,
+        "recall": 0.96,
+        "f1-score": 0.9458128078817734,
+        "support": 100.0
+      },
+      "动态规划": {
+        "precision": 0.9072164948453608,
+        "recall": 0.88,
+        "f1-score": 0.8934010152284264,
+        "support": 100.0
+      },
+      "排序算法": {
+        "precision": 0.9405940594059405,
+        "recall": 0.95,
+        "f1-score": 0.945273631840796,
+        "support": 100.0
+      },
+      "搜索算法": {
+        "precision": 0.8673469387755102,
+        "recall": 0.85,
+        "f1-score": 0.8585858585858586,
+        "support": 100.0
+      },
+      "accuracy": 0.926,
+      "macro avg": {
+        "precision": 0.9254788695560496,
+        "recall": 0.9259999999999999,
+        "f1-score": 0.9256295880805052,
+        "support": 500.0
+      },
+      "weighted avg": {
+        "precision": 0.9254788695560496,
+        "recall": 0.926,
+        "f1-score": 0.9256295880805052,
+        "support": 500.0
+      }
+    }
+  }
+}

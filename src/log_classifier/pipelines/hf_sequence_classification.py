@@ -5,6 +5,12 @@
 
 所有配置通过 DataConfig / ModelConfig / TrainConfig 传入，
 训练结果以结构化 dict 形式返回，供调用方持久化。
+
+Phase A 增量：
+- 支持外部传入预先划分好的数据（`preloaded_splits`），用于 K-fold 包装器
+- 训练前可选 EDA 数据增强（`TrainConfig.use_eda`）
+- 透传 gradient_accumulation_steps / label_smoothing / R-Drop / Layerwise LR
+- 返回值增加 dev/test 预测概率（softmax 后），供 Stacking 复用
 """
 
 import json
@@ -27,6 +33,7 @@ from transformers import (
 )
 
 from log_classifier.config import DataConfig, ModelConfig, TrainConfig
+from log_classifier.data.augmentation import augment_dataset
 from log_classifier.data.hf_dataset import build_hf_dataset_dict, tokenize_datasets
 from log_classifier.data.preprocess import (
     assign_label_ids, build_label_maps, build_samples,
@@ -64,6 +71,15 @@ def _make_training_args(
     total_training_steps: int,
 ) -> TrainingArguments:
     warmup_steps = int(total_training_steps * train_cfg.warmup_ratio)
+
+    # bf16 与 fp16 互斥；bf16 优先（适用于 DeBERTa 等会触发 FP16 unscale 错误的模型）
+    use_bf16 = bool(train_cfg.bf16)
+    use_fp16 = bool(train_cfg.fp16) and not use_bf16
+    if use_bf16:
+        print("[Info] 使用 bf16 混合精度")
+    elif use_fp16:
+        print("[Info] 使用 fp16 混合精度")
+
     return TrainingArguments(
         output_dir=train_cfg.output_dir,
 
@@ -74,6 +90,7 @@ def _make_training_args(
 
         per_device_train_batch_size=train_cfg.train_batch_size,
         per_device_eval_batch_size=train_cfg.eval_batch_size,
+        gradient_accumulation_steps=train_cfg.gradient_accumulation_steps,
         learning_rate=train_cfg.learning_rate,
         weight_decay=train_cfg.weight_decay,
         num_train_epochs=train_cfg.num_train_epochs,
@@ -84,21 +101,47 @@ def _make_training_args(
         greater_is_better=True,
         save_total_limit=train_cfg.save_total_limit,
 
-        fp16=train_cfg.fp16,
+        fp16=use_fp16,
+        bf16=use_bf16,
         report_to="none",
         seed=train_cfg.seed,
     )
+
+
+def _softmax_np(logits: np.ndarray) -> np.ndarray:
+    x = logits - logits.max(axis=-1, keepdims=True)
+    e = np.exp(x)
+    return e / e.sum(axis=-1, keepdims=True)
 
 
 def _evaluate_and_report(
     trainer: WeightedTrainer,
     tokenized_datasets,
     id2label: Dict[int, str],
-) -> Tuple[Dict[str, float], Dict[str, float], np.ndarray, np.ndarray, float]:
-    """评估并返回结构化结果。"""
+) -> Tuple[
+    Dict[str, float], Dict[str, float],
+    np.ndarray, np.ndarray,
+    np.ndarray, np.ndarray,
+    float,
+]:
+    """评估并返回结构化结果。
+
+    Returns:
+        val_metrics: HF Trainer 返回的 dict
+        test_metrics: accuracy / macro_f1 / ... 的 dict
+        dev_probs: dev 集 softmax 概率 [N_dev, N_class]
+        test_probs: test 集 softmax 概率 [N_test, N_class]
+        test_preds: test 集硬预测 [N_test]
+        test_labels: test 集真实标签 [N_test]
+        throughput: test 吞吐量 samples/s
+    """
     print("\n========== 验证集结果 ==========")
     val_metrics = trainer.evaluate(tokenized_datasets["validation"])
     print(val_metrics)
+
+    # 顺便取 dev 概率（给 Stacking 用）
+    dev_output = trainer.predict(tokenized_datasets["validation"])
+    dev_probs = _softmax_np(dev_output.predictions)
 
     print("\n========== 测试集结果 ==========")
     num_test_samples = len(tokenized_datasets["test"])
@@ -106,6 +149,7 @@ def _evaluate_and_report(
     test_output = trainer.predict(tokenized_datasets["test"])
     t_elapsed = time.perf_counter() - t_start
 
+    test_probs = _softmax_np(test_output.predictions)
     test_preds = np.argmax(test_output.predictions, axis=-1)
     test_labels = test_output.label_ids
     throughput = num_test_samples / t_elapsed if t_elapsed > 0 else float("inf")
@@ -134,7 +178,7 @@ def _evaluate_and_report(
         digits=4, zero_division=0,
     ))
 
-    return val_metrics, test_metrics, test_preds, test_labels, throughput
+    return val_metrics, test_metrics, dev_probs, test_probs, test_preds, test_labels, throughput
 
 
 def _load_fixed_splits(
@@ -201,6 +245,22 @@ def _save_artifacts(
     print(f"\n模型和标签映射已保存到: {output_dir}")
 
 
+def _apply_eda_augmentation(
+    train_data: List[Dict[str, Any]],
+    train_cfg: TrainConfig,
+) -> List[Dict[str, Any]]:
+    if not train_cfg.use_eda:
+        return train_data
+    return augment_dataset(
+        train_data,
+        num_aug_per_sample=train_cfg.num_aug_per_sample,
+        target_classes=train_cfg.augment_target_classes,
+        alpha_ri=train_cfg.eda_alpha_ri,
+        alpha_rs=train_cfg.eda_alpha_rs,
+        p_rd=train_cfg.eda_p_rd,
+    )
+
+
 # ------------------------------------------------------------------
 # 公开接口
 # ------------------------------------------------------------------
@@ -209,51 +269,74 @@ def run_hf_sequence_classification(
     data_cfg: DataConfig,
     model_cfg: ModelConfig,
     train_cfg: TrainConfig,
+    preloaded_splits: Optional[Dict[str, Any]] = None,
+    save_model: bool = True,
 ) -> Dict[str, Any]:
     """执行完整训练流程，返回结构化结果字典。
 
+    Args:
+        preloaded_splits: 若提供，跳过从文件读数据。键要求：
+            train, dev, test（每个是 list[dict] with labels, text, label_text）
+            label_list, label2id, id2label
+        save_model: 是否落盘 model.safetensors（K-fold 场景可关，节省磁盘）
+
     调用方负责持久化结果（save_model / save_pretrained 已在内部完成）。
     """
-    # ---- 数据（优先使用固定划分文件） ----
-    fixed = _load_fixed_splits(data_cfg, train_cfg)
-
-    if fixed is not None:
-        train_data = fixed["train"]
-        dev_data = fixed["dev"]
-        test_data = fixed["test"]
-        label_list = fixed.get("label_list")
-        label2id = fixed.get("label2id")
-        id2label = fixed.get("id2label")
-
-        # 恢复 labels 字段（splits 中只有 label_text）
-        if "labels" not in train_data[0]:
-            for s in train_data:
-                s["labels"] = label2id[s["label_text"]]
-            for s in dev_data:
-                s["labels"] = label2id[s["label_text"]]
-            for s in test_data:
-                s["labels"] = label2id[s["label_text"]]
-
-        print(f"总样本数（固定划分）: {len(train_data) + len(dev_data) + len(test_data)}")
-        print(f"标签数: {len(label_list)}")
-        print(f"标签列表: {label_list}")
+    # ---- 数据（优先使用外部传入，其次固定划分文件，最后重新划分） ----
+    if preloaded_splits is not None:
+        train_data = preloaded_splits["train"]
+        dev_data = preloaded_splits["dev"]
+        test_data = preloaded_splits["test"]
+        label_list = preloaded_splits["label_list"]
+        label2id = preloaded_splits["label2id"]
+        id2label = preloaded_splits["id2label"]
+        print(f"[Info] 使用外部传入的数据划分")
         print(f"Train: {len(train_data)} | Dev: {len(dev_data)} | Test: {len(test_data)}")
     else:
-        raw_data = load_json_data(data_cfg.data_path)
-        samples = build_samples(raw_data, data_cfg.label_field, data_cfg.text_mode)
-        samples = filter_rare_classes(samples, min_count=data_cfg.min_class_count)
-        print(f"总样本数: {len(samples)}")
+        fixed = _load_fixed_splits(data_cfg, train_cfg)
 
-        label_list, label2id, id2label = build_label_maps(samples)
-        assign_label_ids(samples, label2id)
-        print(f"标签数: {len(label_list)}")
-        print(f"标签列表: {label_list}")
+        if fixed is not None:
+            train_data = fixed["train"]
+            dev_data = fixed["dev"]
+            test_data = fixed["test"]
+            label_list = fixed.get("label_list")
+            label2id = fixed.get("label2id")
+            id2label = fixed.get("id2label")
 
-        train_data, dev_data, test_data = split_dataset(
-            samples, seed=train_cfg.seed,
-            test_size=data_cfg.test_size, dev_size=data_cfg.dev_size,
-        )
-        print(f"Train: {len(train_data)} | Dev: {len(dev_data)} | Test: {len(test_data)}")
+            # 恢复 labels 字段（splits 中只有 label_text）
+            if "labels" not in train_data[0]:
+                for s in train_data:
+                    s["labels"] = label2id[s["label_text"]]
+                for s in dev_data:
+                    s["labels"] = label2id[s["label_text"]]
+                for s in test_data:
+                    s["labels"] = label2id[s["label_text"]]
+
+            print(f"总样本数（固定划分）: {len(train_data) + len(dev_data) + len(test_data)}")
+            print(f"标签数: {len(label_list)}")
+            print(f"标签列表: {label_list}")
+            print(f"Train: {len(train_data)} | Dev: {len(dev_data)} | Test: {len(test_data)}")
+        else:
+            raw_data = load_json_data(data_cfg.data_path)
+            samples = build_samples(raw_data, data_cfg.label_field, data_cfg.text_mode)
+            samples = filter_rare_classes(samples, min_count=data_cfg.min_class_count)
+            print(f"总样本数: {len(samples)}")
+
+            label_list, label2id, id2label = build_label_maps(samples)
+            assign_label_ids(samples, label2id)
+            print(f"标签数: {len(label_list)}")
+            print(f"标签列表: {label_list}")
+
+            train_data, dev_data, test_data = split_dataset(
+                samples, seed=train_cfg.seed,
+                test_size=data_cfg.test_size, dev_size=data_cfg.dev_size,
+            )
+            print(f"Train: {len(train_data)} | Dev: {len(dev_data)} | Test: {len(test_data)}")
+
+    # ---- EDA 数据增强（仅 train） ----
+    original_train_size = len(train_data)
+    train_data = _apply_eda_augmentation(train_data, train_cfg)
+    augmented_added = len(train_data) - original_train_size
 
     # ---- HF 适配 ----
     dataset_dict = build_hf_dataset_dict(train_data, dev_data, test_data)
@@ -265,7 +348,8 @@ def run_hf_sequence_classification(
 
     # ---- Trainer ----
     class_weights = _compute_class_weights(train_data, train_cfg.use_class_weights)
-    steps_per_epoch = math.ceil(len(tokenized_datasets["train"]) / train_cfg.train_batch_size)
+    effective_batch = train_cfg.train_batch_size * train_cfg.gradient_accumulation_steps
+    steps_per_epoch = math.ceil(len(tokenized_datasets["train"]) / effective_batch)
     total_training_steps = steps_per_epoch * train_cfg.num_train_epochs
     training_args = _make_training_args(train_cfg, model_cfg, total_training_steps)
 
@@ -278,6 +362,16 @@ def run_hf_sequence_classification(
         data_collator=DataCollatorWithPadding(tokenizer=tokenizer),
         compute_metrics=compute_metrics,
         class_weights=class_weights,
+        use_focal_loss=train_cfg.use_focal_loss,
+        focal_loss_gamma=train_cfg.focal_loss_gamma,
+        use_adversarial=train_cfg.use_adversarial,
+        adversarial_method=train_cfg.adversarial_method,
+        adversarial_epsilon=train_cfg.adversarial_epsilon,
+        label_smoothing=train_cfg.label_smoothing,
+        use_rdrop=train_cfg.use_rdrop,
+        rdrop_alpha=train_cfg.rdrop_alpha,
+        use_layerwise_lr_decay=train_cfg.use_layerwise_lr_decay,
+        layerwise_lr_decay_rate=train_cfg.layerwise_lr_decay_rate,
         callbacks=[
             EarlyStoppingCallback(early_stopping_patience=train_cfg.early_stopping_patience),
         ],
@@ -285,25 +379,32 @@ def run_hf_sequence_classification(
 
     # ---- 训练 & 评估 & 保存 ----
     print("\n========== 开始训练 ==========")
+    if augmented_added > 0:
+        print(f"[Info] EDA 启用：原始 train={original_train_size}, 增强后={len(train_data)} (+{augmented_added})")
     t0 = time.perf_counter()
     trainer.train()
     train_elapsed = time.perf_counter() - t0
     print(f"训练完成，耗时: {train_elapsed:.2f}s")
 
-    val_metrics, test_metrics, test_preds, test_labels, throughput \
-        = _evaluate_and_report(trainer, tokenized_datasets, id2label)
-
-    _save_artifacts(
-        trainer, tokenizer, train_cfg.output_dir,
-        label2id, id2label,
+    (val_metrics, test_metrics,
+     dev_probs, test_probs,
+     test_preds, test_labels, throughput) = _evaluate_and_report(
+        trainer, tokenized_datasets, id2label,
     )
 
-    return {
+    if save_model:
+        _save_artifacts(
+            trainer, tokenizer, train_cfg.output_dir,
+            label2id, id2label,
+        )
+
+    result = {
         "model_name": model_cfg.model_name,
         "label_list": label_list,
         "label2id": label2id,
         "id2label": id2label,
-        "train_samples": len(train_data),
+        "train_samples": original_train_size,
+        "train_samples_with_aug": len(train_data),
         "dev_samples": len(dev_data),
         "test_samples": len(test_data),
         "num_labels": len(label_list),
@@ -313,3 +414,10 @@ def run_hf_sequence_classification(
         "test_throughput_samples_per_sec": round(throughput, 2),
         "best_weights_path": os.path.join(train_cfg.output_dir, "best_model.pt"),
     }
+
+    # 以 numpy array 形式挂到 result 外（不放入结构化 json），供调用方按需持久化
+    result["_dev_probs"] = dev_probs
+    result["_test_probs"] = test_probs
+    result["_test_preds"] = test_preds
+    result["_test_labels"] = test_labels
+    return result
