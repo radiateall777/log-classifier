@@ -24,7 +24,7 @@ mkdir -p "$OUTPUT_DIR"
 # Baseline 模型列表
 declare -a BASELINES=(
     "bert-base-uncased"
-    "roberta-base"
+    "distilbert-base-uncased"
     "microsoft/deberta-v3-base"
     "nghuyong/ernie-2.0-base-en"
     "hfl/chinese-macbert-base"
@@ -67,7 +67,7 @@ for model_id in "${BASELINES[@]}"; do
         --seed $SEED \
         --label_field "label3" \
         --text_mode "user_assistant" \
-        --use_class_weights true \
+        --use_class_weights \
         --early_stopping_patience 2 \
         --save_total_limit 2
 

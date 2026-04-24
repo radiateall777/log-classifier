@@ -10,8 +10,25 @@ output/
 /tutorials
 /notebooks
 /configs
-/__pycache__
-*.pyc
-*.pt
-*.bin
+/scripts
+
+# Python caches
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Model weights and large binaries (too big for git)
 *.safetensors
+*.pt
+*.pth
+*.ckpt
+*.h5
+training_args.bin
+optimizer.pt
+scheduler.pt
+pytorch_model.bin
+
+# Misc
+.DS_Store
+.ipynb_checkpoints/

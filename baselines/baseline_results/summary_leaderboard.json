@@ -1,0 +1,192 @@
+[
+  {
+    "category": "phase_d_stacking",
+    "method": "stacking_best",
+    "method_name": "⭐ Phase D Best (Stacking (stack_lr_c10))",
+    "accuracy": 0.926,
+    "macro_f1": 0.9256295880805052,
+    "weighted_f1": 0.9256295880805052,
+    "train_elapsed_seconds": null,
+    "throughput": null
+  },
+  {
+    "category": "phase_d_stacking",
+    "method": "stack_lr_c10",
+    "method_name": "Stacking (stack_lr_c10)",
+    "accuracy": 0.926,
+    "macro_f1": 0.9256295880805052,
+    "weighted_f1": 0.9256295880805052,
+    "train_elapsed_seconds": 0.071,
+    "throughput": 1580370.76
+  },
+  {
+    "category": "phase_d_stacking",
+    "method": "stack_lr_c1",
+    "method_name": "Stacking (stack_lr_c1)",
+    "accuracy": 0.924,
+    "macro_f1": 0.9236283802329819,
+    "weighted_f1": 0.923628380232982,
+    "train_elapsed_seconds": 0.052,
+    "throughput": 821446.14
+  },
+  {
+    "category": "phase_d_stacking",
+    "method": "soft_vote",
+    "method_name": "Soft Voting (average probs)",
+    "accuracy": 0.924,
+    "macro_f1": 0.9234516893805225,
+    "weighted_f1": 0.9234516893805226,
+    "train_elapsed_seconds": null,
+    "throughput": null
+  },
+  {
+    "category": "phase_d_stacking",
+    "method": "stack_xgb",
+    "method_name": "Stacking (stack_xgb)",
+    "accuracy": 0.918,
+    "macro_f1": 0.9179164828191798,
+    "weighted_f1": 0.9179164828191799,
+    "train_elapsed_seconds": 1.856,
+    "throughput": 172066.95
+  },
+  {
+    "category": "phase3_enhanced",
+    "method": "bert-base-uncased_fgm",
+    "method_name": "bert-base-uncased + fgm",
+    "accuracy": 0.918,
+    "macro_f1": 0.9172247002256603,
+    "weighted_f1": 0.9172247002256603,
+    "train_elapsed_seconds": 2960.03,
+    "throughput": 250.45
+  },
+  {
+    "category": "phase_d_stacking",
+    "method": "stack_lgb",
+    "method_name": "Stacking (stack_lgb)",
+    "accuracy": 0.916,
+    "macro_f1": 0.9161563261853825,
+    "weighted_f1": 0.9161563261853823,
+    "train_elapsed_seconds": 1.248,
+    "throughput": 36588.02
+  },
+  {
+    "category": "phase_c_sota",
+    "method": "roberta_large_sota",
+    "method_name": "roberta-large (K=5×seed=3 ensemble)",
+    "accuracy": 0.916,
+    "macro_f1": 0.9156149857300268,
+    "weighted_f1": 0.9156149857300268,
+    "train_elapsed_seconds": 47639.67,
+    "throughput": null
+  },
+  {
+    "category": "phase3_enhanced",
+    "method": "bert-base-uncased_focal_fgm",
+    "method_name": "bert-base-uncased + focal_fgm",
+    "accuracy": 0.91,
+    "macro_f1": 0.9095021604011977,
+    "weighted_f1": 0.9095021604011977,
+    "train_elapsed_seconds": 1937.517,
+    "throughput": 371.4
+  },
+  {
+    "category": "phase_c_sota",
+    "method": "roberta_base_sota",
+    "method_name": "roberta-base (K=5×seed=3 ensemble)",
+    "accuracy": 0.906,
+    "macro_f1": 0.9049754257565988,
+    "weighted_f1": 0.9049754257565988,
+    "train_elapsed_seconds": 26030.51,
+    "throughput": null
+  },
+  {
+    "category": "phase3_enhanced",
+    "method": "bert-base-uncased_focal",
+    "method_name": "bert-base-uncased + focal",
+    "accuracy": 0.902,
+    "macro_f1": 0.9012019832764112,
+    "weighted_f1": 0.9012019832764112,
+    "train_elapsed_seconds": 920.364,
+    "throughput": 249.39
+  },
+  {
+    "category": "ml",
+    "method": "fasttext",
+    "method_name": "FastText",
+    "accuracy": 0.896,
+    "macro_f1": 0.8947726199954822,
+    "weighted_f1": 0.8947726199954821,
+    "train_elapsed_seconds": 6.087684392929077,
+    "throughput": 5027.019771031891
+  },
+  {
+    "category": "phase3_enhanced",
+    "method": "roberta-base_fgm",
+    "method_name": "roberta-base + fgm",
+    "accuracy": 0.894,
+    "macro_f1": 0.8927167131450309,
+    "weighted_f1": 0.892716713145031,
+    "train_elapsed_seconds": 1191.375,
+    "throughput": 391.65
+  },
+  {
+    "category": "phase3_enhanced",
+    "method": "bert-base-uncased_baseline",
+    "method_name": "bert-base-uncased + baseline",
+    "accuracy": 0.892,
+    "macro_f1": 0.8912409247272699,
+    "weighted_f1": 0.8912409247272698,
+    "train_elapsed_seconds": 696.878,
+    "throughput": 278.18
+  },
+  {
+    "category": "ml",
+    "method": "tfidf_svm",
+    "method_name": "TF-IDF + Linear SVM",
+    "accuracy": 0.892,
+    "macro_f1": 0.8907125169153701,
+    "weighted_f1": 0.8907125169153701,
+    "train_elapsed_seconds": 0.6700670719146729,
+    "throughput": 422047.0919702153
+  },
+  {
+    "category": "ml",
+    "method": "tfidf_lr",
+    "method_name": "TF-IDF + Logistic Regression",
+    "accuracy": 0.89,
+    "macro_f1": 0.8887384741027159,
+    "weighted_f1": 0.8887384741027158,
+    "train_elapsed_seconds": 37.677350997924805,
+    "throughput": 183863.9312642469
+  },
+  {
+    "category": "phase3_enhanced",
+    "method": "roberta-base_focal",
+    "method_name": "roberta-base + focal",
+    "accuracy": 0.882,
+    "macro_f1": 0.8796876494660317,
+    "weighted_f1": 0.8796876494660317,
+    "train_elapsed_seconds": 485.466,
+    "throughput": 394.23
+  },
+  {
+    "category": "ml",
+    "method": "tfidf_nb",
+    "method_name": "TF-IDF + Naive Bayes",
+    "accuracy": 0.876,
+    "macro_f1": 0.874321907723042,
+    "weighted_f1": 0.874321907723042,
+    "train_elapsed_seconds": 0.0221860408782959,
+    "throughput": 323335.1834720937
+  },
+  {
+    "category": "phase3_enhanced",
+    "method": "roberta-base_baseline",
+    "method_name": "roberta-base + baseline",
+    "accuracy": 0.874,
+    "macro_f1": 0.8736354667682855,
+    "weighted_f1": 0.8736354667682854,
+    "train_elapsed_seconds": 679.128,
+    "throughput": 396.23
+  }
+]
