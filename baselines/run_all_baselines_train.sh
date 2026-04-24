@@ -57,7 +57,7 @@ for model_id in "${BASELINES[@]}"; do
     echo -e "${YELLOW}==============================================${NC}"
 
     python3 baselines/run_baseline_train.py \
-        --model "$model_id" \
+        --model_name "$model_id" \
         --data_path "$DATA_PATH" \
         --output_dir "$OUTPUT_DIR" \
         --max_length $MAX_LENGTH \
@@ -67,7 +67,7 @@ for model_id in "${BASELINES[@]}"; do
         --seed $SEED \
         --label_field "label3" \
         --text_mode "user_assistant" \
-        --use_class_weights true \
+        --use_class_weights \
         --early_stopping_patience 2 \
         --save_total_limit 2
 

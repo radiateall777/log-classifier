@@ -193,6 +193,11 @@ def _save_artifacts(
             f, ensure_ascii=False, indent=2,
         )
 
+    # 导出最优权重文件，方便推理时直接 load_state_dict
+    best_weights_path = os.path.join(output_dir, "best_model.pt")
+    torch.save(trainer.model.state_dict(), best_weights_path)
+    print(f"最优权重已保存: {best_weights_path}")
+
     print(f"\n模型和标签映射已保存到: {output_dir}")
 
 
@@ -306,4 +311,5 @@ def run_hf_sequence_classification(
         "test_metrics": test_metrics,
         "train_elapsed_seconds": round(train_elapsed, 3),
         "test_throughput_samples_per_sec": round(throughput, 2),
+        "best_weights_path": os.path.join(train_cfg.output_dir, "best_model.pt"),
     }
