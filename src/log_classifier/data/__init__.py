@@ -1,5 +1,4 @@
 from log_classifier.data.hf_dataset import build_hf_dataset_dict, tokenize_datasets
-from log_classifier.data.lightning_datamodule import LogClassifierDataModule
 from log_classifier.data.preprocess import (
     assign_label_ids,
     build_label_maps,
@@ -20,5 +19,4 @@ __all__ = [
     "split_dataset",
     "build_hf_dataset_dict",
     "tokenize_datasets",
-    "LogClassifierDataModule",
 ]

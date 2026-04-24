@@ -25,7 +25,6 @@ mkdir -p "$OUTPUT_DIR"
 declare -a BASELINES=(
     "bert-base-uncased"
     "roberta-base"
-    "microsoft/deberta-v3-base"
     "nghuyong/ernie-2.0-base-en"
     "hfl/chinese-macbert-base"
     "xlnet-base-cased"
@@ -67,7 +66,7 @@ for model_id in "${BASELINES[@]}"; do
         --seed $SEED \
         --label_field "label3" \
         --text_mode "user_assistant" \
-        --use_class_weights true \
+        --use_class_weight \
         --early_stopping_patience 2 \
         --save_total_limit 2
 

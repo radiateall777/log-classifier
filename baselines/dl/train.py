@@ -19,7 +19,7 @@ import argparse
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
 import torch
 from log_classifier.config import DataConfig, ModelConfig, TrainConfig
