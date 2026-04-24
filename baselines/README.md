@@ -1,12 +1,14 @@
-# 日志分类多分类任务 Baseline 对比方法
+# baselines/ — 实验运行脚本
 
-本目录包含2022-2024年间主流的Transformer-based文本/代码分类模型作为Baseline对比。
+按 **Phase** 组织的日志分类实验入口。所有结果输出到 `../baseline_results/`，
+排行榜见 [`../baseline_results/README.md`](../baseline_results/README.md)。
 
-## 📋 支持的Baseline模型
+## 📁 目录结构
 
 | 模型 | HuggingFace ID | 简介 | 发表时间 |
 |------|----------------|------|----------|
 | BERT | `bert-base-uncased` | Google经典预训练模型 | 2018 |
+| DistilBERT | `distilbert-base-uncased` | 经知识蒸馏的轻量BERT | 2019 |
 | RoBERTa | `roberta-base` | Facebook优化版BERT | 2019 |
 | DeBERTa-v3 | `microsoft/deberta-v3-base` | Microsoft增强版Transformer | 2021 |
 | ERNIE-2.0 | `nghuyong/ernie-2.0-base-en` | 百度知识增强预训练模型 | 2019 |
@@ -49,12 +51,11 @@ python baselines/dl/eval.py --model_dir ./outputs/baselines/dl/bert-base-uncased
 bash baselines/dl/run_all_eval.sh
 ```
 
-## 📊 数据说明
+## 📊 数据与依赖
 
-- **数据文件**: `data/random_samples.jsonl`
-- **标签字段**: `label3` (5分类任务)
-- **类别**: 搜索算法、代码补全、动态规划、排序算法、Java Spring相关
-- **样本数**: 5000条 (每类1000条)
+- 数据：`../data/random_samples.jsonl`（5000 条，5 类各 1000）
+- 标签字段：`label3`；固定 test 划分：`test_split_seed=42, test_size=0.1`
+- 依赖：见项目根 [`pyproject.toml`](../pyproject.toml)，安装 `uv sync` 或 `pip install -e ..`
 
 ## 📁 输出文件目录结构
 
@@ -98,3 +99,12 @@ tiktoken>=0.4.0
 ```bash
 pip install -r baselines/requirements.txt
 ```
+
+## ⚠️ 已知问题
+
+- **DeBERTa-v3** 在本 pipeline 上不收敛（train loss 震荡 1.6，eval f1 稳定 0.067），已改用 `roberta-large` 作为强 backbone。
+- 训练完成后 transformer fold 权重**不保留**（`_scratch` 目录会被清理），只保存 OOF/test 概率的 `.npy`；Stacking 依赖这些 `.npy` 即可复现。如需对新样本推理，请使用 Phase 3 的 `model.safetensors`（本地保留，未推送 git）。
+
+---
+
+_此 README 记录脚本的运行方式；实验结果排行榜由 `python/regen_summary.py` 自动生成到 `../baseline_results/README.md`。_

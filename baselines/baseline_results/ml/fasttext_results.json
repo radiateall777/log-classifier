@@ -1,0 +1,72 @@
+{
+  "metrics": {
+    "accuracy": 0.896,
+    "macro_f1": 0.8947726199954822,
+    "weighted_f1": 0.8947726199954821,
+    "macro_precision": 0.8952160446377677,
+    "macro_recall": 0.8960000000000001
+  },
+  "classification_report": {
+    "Java Spring相关": {
+      "precision": 0.9423076923076923,
+      "recall": 0.98,
+      "f1-score": 0.9607843137254902,
+      "support": 100.0
+    },
+    "代码补全": {
+      "precision": 0.8691588785046729,
+      "recall": 0.93,
+      "f1-score": 0.8985507246376812,
+      "support": 100.0
+    },
+    "动态规划": {
+      "precision": 0.8712871287128713,
+      "recall": 0.88,
+      "f1-score": 0.8756218905472637,
+      "support": 100.0
+    },
+    "排序算法": {
+      "precision": 0.9393939393939394,
+      "recall": 0.93,
+      "f1-score": 0.9346733668341709,
+      "support": 100.0
+    },
+    "搜索算法": {
+      "precision": 0.8539325842696629,
+      "recall": 0.76,
+      "f1-score": 0.8042328042328042,
+      "support": 100.0
+    },
+    "accuracy": 0.896,
+    "macro avg": {
+      "precision": 0.8952160446377677,
+      "recall": 0.8960000000000001,
+      "f1-score": 0.8947726199954822,
+      "support": 500.0
+    },
+    "weighted avg": {
+      "precision": 0.8952160446377677,
+      "recall": 0.896,
+      "f1-score": 0.8947726199954821,
+      "support": 500.0
+    }
+  },
+  "method": "fasttext",
+  "method_name": "FastText",
+  "train_time_seconds": 6.087684392929077,
+  "infer_time_seconds": 0.09946250915527344,
+  "throughput_samples_per_second": 5027.019771031891,
+  "fasttext_params": {
+    "lr": 0.8,
+    "epoch": 25,
+    "wordNgrams": 2,
+    "dim": 100
+  },
+  "test_samples": 500,
+  "num_labels": 5,
+  "best_params": {
+    "lr": 0.8,
+    "epoch": 25
+  },
+  "dev_macro_f1": 0.8870973717013589
+}

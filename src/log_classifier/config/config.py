@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import List, Optional
 
 import torch
 
@@ -18,7 +19,7 @@ class DataConfig:
 class ModelConfig:
     """模型 & tokenizer 相关配置。"""
     model_name: str = "bert-base-uncased"
-    max_length: int = 256
+    max_length: int = 512
 
 
 @dataclass
@@ -35,6 +36,12 @@ class TrainConfig:
 
     use_class_weights: bool = True
     fp16: bool = field(default_factory=lambda: torch.cuda.is_available())
+    # 使用 bfloat16 替代 fp16；bf16 有更大指数范围、不需要 GradScaler，
+    # DeBERTa-v3 等模型在 fp16 下会触发 "Attempting to unscale FP16 gradients" 错误，必须用 bf16。
+    # Ampere+ (RTX 3090/A100 等) 硬件支持 bf16。
+    bf16: bool = False
     logging_steps: int = 50
     save_total_limit: int = 2
-    early_stopping_patience: int = 2
+    early_stopping_patience: int = 5
+
+    # Baseline 不需要其它花哨的配置

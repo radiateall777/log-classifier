@@ -24,6 +24,7 @@ from transformers import (
     DataCollatorWithPadding,
     EarlyStoppingCallback,
     TrainingArguments,
+    Trainer,
 )
 
 from log_classifier.config import DataConfig, ModelConfig, TrainConfig
@@ -34,28 +35,8 @@ from log_classifier.data.preprocess import (
 )
 from log_classifier.models.baseline.dl_models import build_model, build_tokenizer
 from log_classifier.training.metrics import compute_metrics
-from log_classifier.training.weighted_trainer import WeightedTrainer
 
 
-# ------------------------------------------------------------------
-# 内部辅助
-# ------------------------------------------------------------------
-
-def _compute_class_weights(
-    train_data: List[Dict[str, Any]],
-    enabled: bool,
-) -> Optional[torch.Tensor]:
-    if not enabled:
-        return None
-    train_labels = np.array([x["labels"] for x in train_data])
-    weights = compute_class_weight(
-        class_weight="balanced",
-        classes=np.unique(train_labels),
-        y=train_labels,
-    )
-    tensor = torch.tensor(weights, dtype=torch.float)
-    print(f"[Info] 使用 class weights: {tensor.tolist()}")
-    return tensor
 
 
 def _make_training_args(
@@ -91,7 +72,7 @@ def _make_training_args(
 
 
 def _evaluate_and_report(
-    trainer: WeightedTrainer,
+    trainer: Trainer,
     tokenized_datasets,
     id2label: Dict[int, str],
 ) -> Tuple[Dict[str, float], Dict[str, float], np.ndarray, np.ndarray, float]:
@@ -177,7 +158,7 @@ def _load_fixed_splits(
 
 
 def _save_artifacts(
-    trainer: WeightedTrainer,
+    trainer: Trainer,
     tokenizer,
     output_dir: str,
     label2id: Dict[str, int],
@@ -264,12 +245,11 @@ def run_transformer_pipeline(
     model = build_model(model_cfg.model_name, len(label_list), id2label, label2id)
 
     # ---- Trainer ----
-    class_weights = _compute_class_weights(train_data, train_cfg.use_class_weights)
     steps_per_epoch = math.ceil(len(tokenized_datasets["train"]) / train_cfg.train_batch_size)
     total_training_steps = steps_per_epoch * train_cfg.num_train_epochs
     training_args = _make_training_args(train_cfg, model_cfg, total_training_steps)
 
-    trainer = WeightedTrainer(
+    trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_datasets["train"],
@@ -277,7 +257,6 @@ def run_transformer_pipeline(
         processing_class=tokenizer,
         data_collator=DataCollatorWithPadding(tokenizer=tokenizer),
         compute_metrics=compute_metrics,
-        class_weights=class_weights,
         callbacks=[
             EarlyStoppingCallback(early_stopping_patience=train_cfg.early_stopping_patience),
         ],
