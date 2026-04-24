@@ -53,12 +53,6 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--num_train_epochs", type=int, default=5)
     p.add_argument("--warmup_ratio", type=float, default=0.1)
     p.add_argument("--seed", type=int, default=42)
-    p.add_argument("--use_class_weights", dest="use_class_weights",
-                   action="store_true", default=True)
-    p.add_argument("--no_class_weights", dest="use_class_weights",
-                   action="store_false")
-    p.add_argument("--logging_steps", type=int, default=50)
-    p.add_argument("--save_total_limit", type=int, default=2)
     p.add_argument("--early_stopping_patience", type=int, default=2)
 
     return p
@@ -93,7 +87,6 @@ def main():
         num_train_epochs=args.num_train_epochs,
         warmup_ratio=args.warmup_ratio,
         seed=args.seed,
-        use_class_weights=args.use_class_weights,
         fp16=torch.cuda.is_available(),
         logging_steps=args.logging_steps,
         save_total_limit=args.save_total_limit,

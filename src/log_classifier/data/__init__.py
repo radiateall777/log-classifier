@@ -4,7 +4,6 @@ from log_classifier.data.preprocess import (
     build_label_maps,
     build_samples,
     filter_rare_classes,
-    flatten_messages,
     load_json_data,
     split_dataset,
 )

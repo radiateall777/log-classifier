@@ -44,33 +44,4 @@ class TrainConfig:
     save_total_limit: int = 2
     early_stopping_patience: int = 5
 
-    # Phase 3：Focal Loss
-    use_focal_loss: bool = False
-    focal_loss_gamma: float = 2.0
-
-    # Phase 3：对抗训练
-    use_adversarial: bool = False
-    adversarial_method: str = "fgm"
-    adversarial_epsilon: float = 1.0
-
-    # Phase 3：分层学习率衰减
-    use_layerwise_lr_decay: bool = False
-    layerwise_lr_decay_rate: float = 0.95
-
-    # Phase A（0.95+ 升级）：Label Smoothing
-    label_smoothing: float = 0.0
-
-    # Phase A：R-Drop 正则化
-    use_rdrop: bool = False
-    rdrop_alpha: float = 1.0
-
-    # Phase A：EDA 数据增强（训练集）
-    use_eda: bool = False
-    augment_target_classes: Optional[List[str]] = None   # None 表示所有类都增强
-    num_aug_per_sample: int = 2
-    eda_alpha_ri: float = 0.1
-    eda_alpha_rs: float = 0.1
-    eda_p_rd: float = 0.1
-
-    # Phase A：梯度累积（支持大模型小 batch 等效大 batch）
-    gradient_accumulation_steps: int = 1
+    # Baseline 不需要其它花哨的配置
