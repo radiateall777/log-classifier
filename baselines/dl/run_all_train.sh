@@ -25,7 +25,6 @@ mkdir -p "$OUTPUT_DIR"
 declare -a BASELINES=(
     "bert-base-uncased"
     "roberta-base"
-    "microsoft/deberta-v3-base"
     "nghuyong/ernie-2.0-base-en"
     "hfl/chinese-macbert-base"
     "xlnet-base-cased"
