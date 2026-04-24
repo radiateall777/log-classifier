@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 import torch
 from log_classifier.config import DataConfig, ModelConfig, TrainConfig
-from log_classifier.pipelines import run_hf_sequence_classification
+from log_classifier.pipelines.transformer_pipeline import run_transformer_pipeline
 from log_classifier.utils import seed_everything
 
 
@@ -43,8 +43,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--max_length", type=int, default=256)
 
     # 训练输出
-    p.add_argument("--output_dir", default=None,
-                   help="默认为 ./baseline_results/<model_name>")
+    p.add_argument("--output_dir", default=None, help="结果保存目录")
 
     # 训练超参（一一对应 TrainConfig）
     p.add_argument("--train_batch_size", type=int, default=16)
@@ -70,7 +69,7 @@ def main():
 
     # 每个模型输出到独立目录
     if args.output_dir is None:
-        args.output_dir = f"./baseline_results/{args.model_name.replace('/', '_')}"
+        args.output_dir = f"./outputs/baselines/dl/{args.model_name.replace('/', '_')}"
 
     # 用原生 dataclass 配置，不做任何转换
     data_cfg = DataConfig(
@@ -104,7 +103,7 @@ def main():
     seed_everything(train_cfg.seed)
 
     # 调用原生 pipeline，训练、评估、保存全在里面
-    result = run_hf_sequence_classification(data_cfg, model_cfg, train_cfg)
+    result = run_transformer_pipeline(data_cfg, model_cfg, train_cfg)
 
     # 持久化结构化结果（pipeline 内部已保存模型/tokenizer/splits）
     result_path = os.path.join(

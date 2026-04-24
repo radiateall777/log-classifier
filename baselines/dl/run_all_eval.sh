@@ -1,163 +1,111 @@
 #!/bin/bash
-# 运行所有Baseline模型的一键脚本
-# 使用方法: bash run_all_baselines.sh
+# 运行所有模型噪声鲁棒性与吞吐量评估的一键脚本
+# 使用方法: bash baselines/run_all_eval.sh
 
-set -e  # 遇到错误立即退出
+set -e
 
-# 设置HuggingFace镜像 (国内加速)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/../.."
+
 export HF_ENDPOINT="https://hf-mirror.com"
 
 # 配置
 DATA_PATH="./data/random_samples.jsonl"
-OUTPUT_DIR="./baseline_results"
-MAX_LENGTH=256
-BATCH_SIZE=16
+OUTPUT_DIR="./outputs/baselines/dl"
 
-# 创建输出目录
-mkdir -p "$OUTPUT_DIR"
-
-# 定义Baseline模型列表 (2022-2024年主流文本/代码分类模型)
-# 格式: "模型名称:HuggingFace模型ID"
-declare -a BASELINES=(
-    "BERT:bert-base-uncased"
-    "RoBERTa:roberta-base"
-    "DeBERTa-v3:microsoft/deberta-v3-base"
-    "ERNIE-2.0:nghuyong/ernie-2.0-base-en"
-    "MacBERT:hfl/chinese-macbert-base"
-    "XLNet:xlnet-base-cased"
-    "ALBERT:albert-base-v2"
-    "ELECTRA:google/electra-base-discriminator"
-    "CodeBERT:microsoft/codebert-base"
-    "GraphCodeBERT:microsoft/graphcodebert-base"
-    "UnixCoder:Microsoft/unixcoder-base"
-)
-
-# 输出颜色
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 echo "=============================================="
-echo "日志分类多分类 Baseline 对比实验"
+echo "日志分类已微调模型 噪音鲁棒性与吞吐量评估"
 echo "=============================================="
 echo "数据路径: $DATA_PATH"
-echo "输出目录: $OUTPUT_DIR"
-echo "模型数量: ${#BASELINES[@]}"
+echo "模型目录: $OUTPUT_DIR"
 echo ""
 
-# 记录开始时间
 START_TIME=$(date +%s)
 
-# 运行每个baseline
-for baseline in "${BASELINES[@]}"; do
-    # 解析模型名称和ID
-    NAME="${baseline%%:*}"
-    MODEL_ID="${baseline##*:}"
+# 寻找所有存在 best_model.pt 的微调后模型目录
+MODEL_DIRS=$(find "$OUTPUT_DIR" -maxdepth 1 -mindepth 1 -type d)
 
+if [ -z "$MODEL_DIRS" ]; then
+    echo -e "${RED}没有找到任何微调过的模型目录（在 $OUTPUT_DIR 下）。请先运行 bash baselines/run_all_train.sh${NC}"
+    exit 1
+fi
+
+for model_dir in $MODEL_DIRS; do
+    MODEL_NAME=$(basename "$model_dir")
+    
     echo -e "${YELLOW}==============================================${NC}"
-    echo -e "${YELLOW}运行 Baseline: $NAME${NC}"
-    echo -e "${YELLOW}模型ID: $MODEL_ID${NC}"
+    echo -e "${YELLOW}开始评估模型: $MODEL_NAME${NC}"
+    echo -e "${YELLOW}目录: $model_dir${NC}"
     echo -e "${YELLOW}==============================================${NC}"
 
-    # 检查模型是否已下载/缓存
-    CACHE_DIR="$HOME/.cache/huggingface"
-    MODEL_CACHE="$CACHE_DIR/hub/models--${MODEL_ID//\//--}"
-    if [ -d "$MODEL_CACHE" ]; then
-        echo -e "${GREEN}模型已缓存: $MODEL_ID${NC}"
-    else
-        echo -e "${YELLOW}模型将首次下载: $MODEL_ID${NC}"
-    fi
-
-    # 运行baseline
-    python3 baselines/run_baseline.py \
-        --model "$MODEL_ID" \
-        --max_length $MAX_LENGTH \
-        --batch_size $BATCH_SIZE \
-        --data_path "$DATA_PATH" \
-        --output_dir "$OUTPUT_DIR" \
-        --label_field "label3" \
-        --text_mode "user_assistant" \
-        --seed 42
-
-    # 检查是否成功
+    python3 baselines/dl/eval.py \
+        --model_dir "$model_dir" \
+        --data_path "$DATA_PATH"
+    
     if [ $? -eq 0 ]; then
-        echo -e "${GREEN}✓ $NAME 运行成功${NC}"
+        echo -e "${GREEN}✓ $MODEL_NAME 评估成功${NC}"
     else
-        echo -e "${RED}✗ $NAME 运行失败${NC}"
+        echo -e "${RED}✗ $MODEL_NAME 评估失败${NC}"
     fi
-
     echo ""
 done
 
-# 生成汇总报告
+# 生成总体汇总表格
 echo "=============================================="
-echo "生成汇总报告..."
+echo "生成汇总评估报告..."
 echo "=============================================="
 
 python3 << 'EOF'
-import json
-import os
-import glob
-from collections import OrderedDict
+import json, os, glob
 
-output_dir = "./baseline_results"
-result_files = glob.glob(os.path.join(output_dir, "*_results.json"))
+output_dir = "./outputs/baselines/dl"
+result_files = glob.glob(os.path.join(output_dir, "*/noise_robustness_results.json"))
 
 if not result_files:
-    print("没有找到结果文件!")
+    print("没有找到评估结果文件!")
     exit(1)
 
-results = []
+summary_data = {}
 for f in result_files:
-    with open(f, "r", encoding="utf-8") as fp:
-        r = json.load(fp)
-        results.append(r)
+    model_name = os.path.basename(os.path.dirname(f))
+    with open(f, encoding="utf-8") as fp:
+        try:
+            r = json.load(fp)
+            summary_data[model_name] = r
+        except Exception as e:
+            print(f"解析 {f} 失败: {e}")
 
-# 按Macro F1排序
-results.sort(key=lambda x: x["metrics"]["macro_f1"], reverse=True)
+print(f"\n={'='*80}")
+print("评估结果汇总")
+print("="*81)
+print(f"{'Model':<35} {'Noise Ratio':<15} {'Macro F1':<10} {'Throughput(s/s)':<15}")
+print(f"{'-'*81}")
 
-# 生成汇总表格
-print("\n" + "="*100)
-print("Baseline 对比实验结果汇总")
-print("="*100)
-print(f"{'Model':<30} {'Accuracy':<12} {'Macro F1':<12} {'Weighted F1':<12} {'Precision':<12} {'Recall':<12} {'Time(s)':<10}")
-print("-"*100)
+for model_name, results in sorted(summary_data.items()):
+    for r in results:
+        ratio = r.get("noise_ratio", 0)
+        f1 = r.get("macro_f1", 0)
+        th = r.get("throughput_samples_per_sec", 0)
+        print(f"{model_name:<35} {ratio*100:>5.1f}%          {f1:<10.4f} {th:<15.2f}")
+    print(f"{'-'*81}")
 
-summary_data = []
-for r in results:
-    model_name = r["model_name"]
-    metrics = r["metrics"]
-    elapsed = r.get("elapsed_seconds", 0)
-    print(f"{model_name:<30} {metrics['accuracy']:<12.4f} {metrics['macro_f1']:<12.4f} {metrics['weighted_f1']:<12.4f} {metrics['macro_precision']:<12.4f} {metrics['macro_recall']:<12.4f} {elapsed:<10.2f}")
-    summary_data.append({
-        "model": model_name,
-        "accuracy": metrics["accuracy"],
-        "macro_f1": metrics["macro_f1"],
-        "weighted_f1": metrics["weighted_f1"],
-        "macro_precision": metrics["macro_precision"],
-        "macro_recall": metrics["macro_recall"],
-        "elapsed_seconds": elapsed,
-        "throughput": r.get("throughput_samples_per_second", 0),
-    })
+summary_path = os.path.join(output_dir, "summary_eval_robustness.json")
+with open(summary_path, "w", encoding="utf-8") as out:
+    json.dump(summary_data, out, ensure_ascii=False, indent=2)
 
-print("="*100)
-print(f"\n最佳模型 (Macro F1): {results[0]['model_name']} - {results[0]['metrics']['macro_f1']:.4f}")
-
-# 保存汇总结果
-summary_path = os.path.join(output_dir, "summary.json")
-with open(summary_path, "w", encoding="utf-8") as f:
-    json.dump(summary_data, f, ensure_ascii=False, indent=2)
-
-print(f"\n汇总结果已保存: {summary_path}")
+print(f"\n所有汇总数据已保存为 json: {summary_path}")
 EOF
 
-# 记录结束时间
 END_TIME=$(date +%s)
 ELAPSED=$((END_TIME - START_TIME))
 
 echo ""
 echo "=============================================="
-echo -e "${GREEN}所有Baseline运行完成!${NC}"
-echo "总耗时: $ELAPSED 秒"
+echo -e "${GREEN}所有配置评估完成!${NC}"
+echo "总耗时: $ELAPSED 秒 ($(($ELAPSED / 60)) 分钟)"
 echo "=============================================="

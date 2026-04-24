@@ -15,42 +15,38 @@
 | ALBERT | `albert-base-v2` | Google轻量级BERT | 2019 |
 | ELECTRA | `google/electra-base-discriminator` | Google高效预训练模型 | 2020 |
 | CodeBERT | `microsoft/codebert-base` | 微软代码理解预训练模型 | 2020 |
-| GraphCodeBERT | `microsoft/graphcodebert-base` | 微软代码结构理解模型 | 2021 |
-| UnixCoder | `Microsoft/unixcoder-base` | 微软统一代码理解模型 | 2022 |
 
-> ⚠️ `run_baseline.py` 为零样本推理（不训练，直接评估预训练权重），准确率接近随机。
-> 如需对 baseline 模型做**完整微调训练**，请使用：
-> ```bash
-> python3 baselines/run_baseline_train.py --model bert-base-uncased
-> bash baselines/run_all_baselines_train.sh   # 一键训练所有 baseline
-> ```
+---
 
-## 🚀 快速开始
+## 🚀 工作流：训练与评估
 
-### 运行单个Baseline
+整个评测分为两个步骤：**第一步：微调训练** -> **第二步：鲁棒性与吞吐评估**。
+
+### 第一步：模型训练 (微调)
+
+你可以使用 `train.py` 单独微调一个模型：
 
 ```bash
-python baselines/run_baseline.py --model bert-base-uncased
+python baselines/dl/train.py --model_name bert-base-uncased
 ```
 
-### 运行所有Baseline (一键脚本)
+或者使用一键脚本训练所有 Baseline 模型：
 
 ```bash
-bash baselines/run_all_baselines.sh
+bash baselines/dl/run_all_train.sh
 ```
 
-### 自定义参数
+### 第二步：模型评估 (噪音鲁棒度与吞吐量)
+
+使用 `eval.py` 对**已经完成微调**的模型单独进行噪音测试与吞吐量性能测试：
 
 ```bash
-python baselines/run_baseline.py \
-    --model microsoft/deberta-v3-base \
-    --max_length 256 \
-    --batch_size 16 \
-    --data_path ./data/random_samples.jsonl \
-    --output_dir ./baseline_results \
-    --label_field label3 \
-    --text_mode user_assistant \
-    --seed 42
+python baselines/dl/eval.py --model_dir ./outputs/baselines/dl/bert-base-uncased
+```
+或者一键评测 `outputs/baselines/dl` 目录下的所有微调模型，并汇总出评估报告：
+
+```bash
+bash baselines/dl/run_all_eval.sh
 ```
 
 ## 📊 数据说明
@@ -60,54 +56,45 @@ python baselines/run_baseline.py \
 - **类别**: 搜索算法、代码补全、动态规划、排序算法、Java Spring相关
 - **样本数**: 5000条 (每类1000条)
 
-## 📁 输出文件
+## 📁 输出文件目录结构
 
-运行后会在 `baseline_results/` 目录下生成：
+运行完整的两步命令后，`outputs/baselines/dl/` 目录下将生成如下内容：
 
-- `{model_name}_results.json` - 详细评估结果
-- `{model_name}_splits.json` - 数据划分结果
-- `summary.json` - 所有Baseline汇总对比
+```text
+outputs/baselines/dl/
+├── bert-base-uncased/
+│   ├── best_model.pt                  # 抽取的轻量优选 checkpoint
+│   ├── config.json / model.safetensors# HuggingFace 模型权重
+│   ├── label_mappings.json            # 类别 ID 的映射关系
+│   ├── noise_robustness_results.json  # 该模型不同噪音容忍下的测试结果
+│   ...
+├── summary_train.json                 # 训练阶段基于准确率的全局排序
+└── summary_eval_robustness.json       # 评估阶段噪音与吞吐的全局汇总
+```
 
 ## 📈 评估指标
 
 - Accuracy (准确率)
 - Macro F1 (宏平均F1)
 - Weighted F1 (加权F1)
-- Macro Precision (宏平均精确率)
-- Macro Recall (宏平均召回率)
 - Throughput (吞吐量 samples/s)
 
-## ⚙️ 模型选择说明
-
-本实现遵循以下原则：
-
-1. **方法逻辑不变**: 严格采用各Baseline原始论文的实现方法
-2. **仅修改数据加载**: 根据本项目数据格式调整输入输出
-3. **仅修改评测部分**: 使用统一的评估指标和流程
-4. **CPU推理**: 无需GPU即可运行所有模型
+这几个指标均会在不同参数 `[0.0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5]` 的 UNK replacement 中统计以获取其降级曲线。
 
 ## 🔧 依赖
 
-```
-transformers>=4.30
-torch>=2.0
-scikit-learn>=1.0
-numpy
-pandas
+```text
+transformers>=4.30.0
+torch>=2.0.0
+scikit-learn>=1.0.0
+numpy>=1.20.0
+pandas>=1.3.0
+datasets>=2.0.0
+accelerate>=0.20.0
+tiktoken>=0.4.0
 ```
 
 安装依赖:
 ```bash
-pip install transformers torch scikit-learn numpy pandas
-```
-
-## 📝 添加新的Baseline
-
-如需添加新的Baseline模型，只需在 `run_all_baselines.sh` 中的 `BASELINES` 数组添加新的模型：
-
-```bash
-declare -a BASELINES=(
-    "BERT:bert-base-uncased"
-    "你的模型:model-id"
-)
+pip install -r baselines/requirements.txt
 ```

@@ -10,4 +10,8 @@ output/
 /tutorials
 /notebooks
 /configs
-/scripts
+/__pycache__
+*.pyc
+*.pt
+*.bin
+*.safetensors

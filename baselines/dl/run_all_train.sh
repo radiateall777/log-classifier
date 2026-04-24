@@ -5,14 +5,14 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR/.."
+cd "$SCRIPT_DIR/../.."
 
 # 设置 HuggingFace 镜像（国内加速）
 export HF_ENDPOINT="https://hf-mirror.com"
 
 # 配置
 DATA_PATH="./data/random_samples.jsonl"
-OUTPUT_DIR="./baseline_results"
+OUTPUT_DIR="./outputs/baselines/dl"
 MAX_LENGTH=256
 TRAIN_BATCH_SIZE=16
 NUM_EPOCHS=5
@@ -56,10 +56,10 @@ for model_id in "${BASELINES[@]}"; do
     echo -e "${YELLOW}训练 Baseline: $model_id${NC}"
     echo -e "${YELLOW}==============================================${NC}"
 
-    python3 baselines/run_baseline_train.py \
-        --model "$model_id" \
+    python3 baselines/dl/train.py \
+        --model_name "$model_id" \
         --data_path "$DATA_PATH" \
-        --output_dir "$OUTPUT_DIR" \
+        --output_dir "$OUTPUT_DIR/$MODEL_NAME" \
         --max_length $MAX_LENGTH \
         --train_batch_size $TRAIN_BATCH_SIZE \
         --num_train_epochs $NUM_EPOCHS \
@@ -87,8 +87,8 @@ echo "=============================================="
 python3 << 'EOF'
 import json, os, glob
 
-output_dir = "./baseline_results"
-result_files = glob.glob(os.path.join(output_dir, "*_train_results.json"))
+output_dir = "./outputs/baselines/dl"
+result_files = glob.glob(os.path.join(output_dir, "*/*_train_results.json"))
 
 if not result_files:
     print("没有找到训练结果文件!")

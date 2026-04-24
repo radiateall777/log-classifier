@@ -1,11 +1,7 @@
-from log_classifier.pipelines.hf_sequence_classification import (
-    run_hf_sequence_classification,
-)
-from log_classifier.pipelines.lightning_sequence_classification import (
-    run_lightning_sequence_classification,
+from log_classifier.pipelines.transformer_pipeline import (
+    run_transformer_pipeline,
 )
 
 __all__ = [
-    "run_hf_sequence_classification",
-    "run_lightning_sequence_classification",
+    "run_transformer_pipeline",
 ]
