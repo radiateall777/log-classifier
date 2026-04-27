@@ -1,0 +1,64 @@
+{
+  "method": "soft_vote",
+  "method_name": "Soft Voting (average probs)",
+  "base_models": [
+    "tfidf_lr",
+    "tfidf_svm",
+    "tfidf_nb",
+    "fasttext",
+    "roberta-base",
+    "roberta-large"
+  ],
+  "metrics": {
+    "accuracy": 0.924,
+    "macro_f1": 0.9234516893805225,
+    "weighted_f1": 0.9234516893805226,
+    "macro_precision": 0.9234761806351413,
+    "macro_recall": 0.924
+  },
+  "classification_report": {
+    "Java Spring相关": {
+      "precision": 0.9803921568627451,
+      "recall": 1.0,
+      "f1-score": 0.9900990099009901,
+      "support": 100.0
+    },
+    "代码补全": {
+      "precision": 0.9411764705882353,
+      "recall": 0.96,
+      "f1-score": 0.9504950495049505,
+      "support": 100.0
+    },
+    "动态规划": {
+      "precision": 0.8627450980392157,
+      "recall": 0.88,
+      "f1-score": 0.8712871287128713,
+      "support": 100.0
+    },
+    "排序算法": {
+      "precision": 0.9405940594059405,
+      "recall": 0.95,
+      "f1-score": 0.945273631840796,
+      "support": 100.0
+    },
+    "搜索算法": {
+      "precision": 0.8924731182795699,
+      "recall": 0.83,
+      "f1-score": 0.8601036269430051,
+      "support": 100.0
+    },
+    "accuracy": 0.924,
+    "macro avg": {
+      "precision": 0.9234761806351413,
+      "recall": 0.924,
+      "f1-score": 0.9234516893805225,
+      "support": 500.0
+    },
+    "weighted avg": {
+      "precision": 0.9234761806351411,
+      "recall": 0.924,
+      "f1-score": 0.9234516893805226,
+      "support": 500.0
+    }
+  }
+}

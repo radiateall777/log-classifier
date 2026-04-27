@@ -4,7 +4,6 @@ from log_classifier.data.preprocess import (
     build_label_maps,
     build_samples,
     filter_rare_classes,
-    flatten_messages,
     load_json_data,
     split_dataset,
 )
@@ -18,5 +17,5 @@ __all__ = [
     "assign_label_ids",
     "split_dataset",
     "build_hf_dataset_dict",
-    "tokenize_datasets",
+    "tokenize_datasets"
 ]

@@ -1,0 +1,70 @@
+{
+  "metrics": {
+    "accuracy": 0.926,
+    "macro_f1": 0.9256295880805052,
+    "weighted_f1": 0.9256295880805052,
+    "macro_precision": 0.9254788695560496,
+    "macro_recall": 0.9259999999999999
+  },
+  "classification_report": {
+    "Java Spring相关": {
+      "precision": 0.9801980198019802,
+      "recall": 0.99,
+      "f1-score": 0.9850746268656716,
+      "support": 100.0
+    },
+    "代码补全": {
+      "precision": 0.9320388349514563,
+      "recall": 0.96,
+      "f1-score": 0.9458128078817734,
+      "support": 100.0
+    },
+    "动态规划": {
+      "precision": 0.9072164948453608,
+      "recall": 0.88,
+      "f1-score": 0.8934010152284264,
+      "support": 100.0
+    },
+    "排序算法": {
+      "precision": 0.9405940594059405,
+      "recall": 0.95,
+      "f1-score": 0.945273631840796,
+      "support": 100.0
+    },
+    "搜索算法": {
+      "precision": 0.8673469387755102,
+      "recall": 0.85,
+      "f1-score": 0.8585858585858586,
+      "support": 100.0
+    },
+    "accuracy": 0.926,
+    "macro avg": {
+      "precision": 0.9254788695560496,
+      "recall": 0.9259999999999999,
+      "f1-score": 0.9256295880805052,
+      "support": 500.0
+    },
+    "weighted avg": {
+      "precision": 0.9254788695560496,
+      "recall": 0.926,
+      "f1-score": 0.9256295880805052,
+      "support": 500.0
+    }
+  },
+  "method": "stack_lr_c10",
+  "method_name": "Stacking (stack_lr_c10)",
+  "base_models": [
+    "tfidf_lr",
+    "tfidf_svm",
+    "tfidf_nb",
+    "fasttext",
+    "roberta-base",
+    "roberta-large"
+  ],
+  "stacked_features": 30,
+  "train_time_seconds": 0.071,
+  "infer_time_seconds": 0.0,
+  "throughput_samples_per_second": 1580370.76,
+  "test_samples": 500,
+  "num_labels": 5
+}

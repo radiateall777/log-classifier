@@ -1,0 +1,66 @@
+{
+  "metrics": {
+    "accuracy": 0.89,
+    "macro_f1": 0.8887384741027159,
+    "weighted_f1": 0.8887384741027158,
+    "macro_precision": 0.8903398283766538,
+    "macro_recall": 0.8899999999999999
+  },
+  "classification_report": {
+    "Java Spring相关": {
+      "precision": 0.9519230769230769,
+      "recall": 0.99,
+      "f1-score": 0.9705882352941176,
+      "support": 100.0
+    },
+    "代码补全": {
+      "precision": 0.8407079646017699,
+      "recall": 0.95,
+      "f1-score": 0.892018779342723,
+      "support": 100.0
+    },
+    "动态规划": {
+      "precision": 0.9111111111111111,
+      "recall": 0.82,
+      "f1-score": 0.8631578947368421,
+      "support": 100.0
+    },
+    "排序算法": {
+      "precision": 0.92,
+      "recall": 0.92,
+      "f1-score": 0.92,
+      "support": 100.0
+    },
+    "搜索算法": {
+      "precision": 0.8279569892473119,
+      "recall": 0.77,
+      "f1-score": 0.7979274611398963,
+      "support": 100.0
+    },
+    "accuracy": 0.89,
+    "macro avg": {
+      "precision": 0.8903398283766538,
+      "recall": 0.8899999999999999,
+      "f1-score": 0.8887384741027159,
+      "support": 500.0
+    },
+    "weighted avg": {
+      "precision": 0.890339828376654,
+      "recall": 0.89,
+      "f1-score": 0.8887384741027158,
+      "support": 500.0
+    }
+  },
+  "method": "tfidf_lr",
+  "method_name": "TF-IDF + Logistic Regression",
+  "train_time_seconds": 37.677350997924805,
+  "infer_time_seconds": 0.002719402313232422,
+  "throughput_samples_per_second": 183863.9312642469,
+  "tfidf_features": 50000,
+  "test_samples": 500,
+  "num_labels": 5,
+  "best_params": {
+    "C": 10.0
+  },
+  "dev_macro_f1": 0.8723787765980955
+}
