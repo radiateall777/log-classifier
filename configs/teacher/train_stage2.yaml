@@ -1,12 +1,13 @@
 model_name: microsoft/codebert-base
 data_path: data/random_samples_splits.json
 stage1_checkpoint_dir: outputs/teacher/stage1/best
+label_mapping_path: outputs/teacher/stage1/label_mapping.json
 output_dir: outputs/teacher/stage2
 hard_weights_path: outputs/teacher/stage1/hard_weights.json
 max_length: 512
-batch_size: 8
+batch_size: 32
 learning_rate: 1.0e-5
-epochs: 3
+epochs: 5
 warmup_ratio: 0.1
 weight_decay: 0.01
 seed: 42

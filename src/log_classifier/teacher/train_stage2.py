@@ -112,7 +112,7 @@ def main():
     ensure_dir(output_dir)
 
     stage1_checkpoint_dir = config["stage1_checkpoint_dir"]
-    id2label, label2id = load_label_mapping(os.path.join(stage1_checkpoint_dir, "label_mapping.json"))
+    id2label, label2id = load_label_mapping(config["label_mapping_path"])
     num_labels = len(label2id)
     labels_list = list(id2label.keys())
 
