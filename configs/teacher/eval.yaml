@@ -1,0 +1,6 @@
+checkpoint_dir: outputs/teacher/stage2/best
+data_path: data/random_samples_splits.json
+output_report: outputs/teacher/stage2/eval_report.json
+max_length: 512
+batch_size: 16
+robust_eval: true
