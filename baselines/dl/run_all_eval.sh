@@ -10,7 +10,7 @@ cd "$SCRIPT_DIR/../.."
 export HF_ENDPOINT="https://hf-mirror.com"
 
 # 配置
-DATA_PATH="./data/random_samples.jsonl"
+DATA_PATH="./data/random_samples_splits.json"
 OUTPUT_DIR="./outputs/baselines/dl"
 
 RED='\033[0;31m'

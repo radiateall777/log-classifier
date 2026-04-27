@@ -84,7 +84,7 @@ def main():
     parser.add_argument("--text_mode", default="user_assistant")
     parser.add_argument("--max_length", type=int, default=256)
     parser.add_argument("--batch_size", type=int, default=32)
-    parser.add_argument("--noise_ratios", default="0.0,0.05,0.1,0.15,0.2,0.3,0.4,0.5", help="逗号分隔的噪声比例列表")
+    parser.add_argument("--noise_ratios", default="0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9", help="逗号分隔的噪声比例列表")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--throughput_rounds", type=int, default=3, help="吞吐量测试轮数")
     args = parser.parse_args()
@@ -100,7 +100,7 @@ def main():
     print("============================================================\n")
 
     # 1. 尝试加载保存的固定划分数据获取 test 集
-    splits_path = args.data_path.replace(".jsonl", "_splits.json").replace(".json", "_splits.json")
+    splits_path = args.data_path
     if not os.path.exists(splits_path):
         print(f"ERROR: 找不到数据划分文件 {splits_path}。请先运行完整的训练获取固定的 test 划分以保证测试对齐。")
         return
