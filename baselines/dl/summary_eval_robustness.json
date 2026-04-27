@@ -1,0 +1,522 @@
+{
+  "bert-base-uncased": [
+    {
+      "noise_ratio": 0.1,
+      "accuracy": 0.882,
+      "macro_f1": 0.880059076857548,
+      "weighted_f1": 0.880059076857548,
+      "throughput_samples_per_sec": 327.2300143579424
+    },
+    {
+      "noise_ratio": 0.2,
+      "accuracy": 0.868,
+      "macro_f1": 0.8665282235982673,
+      "weighted_f1": 0.8665282235982672,
+      "throughput_samples_per_sec": 327.1957535798251
+    },
+    {
+      "noise_ratio": 0.3,
+      "accuracy": 0.862,
+      "macro_f1": 0.8602812211771541,
+      "weighted_f1": 0.8602812211771541,
+      "throughput_samples_per_sec": 327.6177442968335
+    },
+    {
+      "noise_ratio": 0.4,
+      "accuracy": 0.864,
+      "macro_f1": 0.8633517960188983,
+      "weighted_f1": 0.8633517960188986,
+      "throughput_samples_per_sec": 326.63500876823764
+    },
+    {
+      "noise_ratio": 0.5,
+      "accuracy": 0.858,
+      "macro_f1": 0.8578797356321539,
+      "weighted_f1": 0.8578797356321539,
+      "throughput_samples_per_sec": 326.3493863341921
+    },
+    {
+      "noise_ratio": 0.6,
+      "accuracy": 0.838,
+      "macro_f1": 0.8391256359320451,
+      "weighted_f1": 0.839125635932045,
+      "throughput_samples_per_sec": 327.1738850242504
+    },
+    {
+      "noise_ratio": 0.7,
+      "accuracy": 0.814,
+      "macro_f1": 0.8163132786825527,
+      "weighted_f1": 0.8163132786825527,
+      "throughput_samples_per_sec": 326.7286529366523
+    },
+    {
+      "noise_ratio": 0.8,
+      "accuracy": 0.786,
+      "macro_f1": 0.7867707901484675,
+      "weighted_f1": 0.7867707901484675,
+      "throughput_samples_per_sec": 325.97764482055055
+    },
+    {
+      "noise_ratio": 0.9,
+      "accuracy": 0.734,
+      "macro_f1": 0.7375542332439131,
+      "weighted_f1": 0.7375542332439133,
+      "throughput_samples_per_sec": 324.1193583088395
+    }
+  ],
+  "roberta-base": [
+    {
+      "noise_ratio": 0.1,
+      "accuracy": 0.874,
+      "macro_f1": 0.8729804419845497,
+      "weighted_f1": 0.8729804419845497,
+      "throughput_samples_per_sec": 323.3806115442061
+    },
+    {
+      "noise_ratio": 0.2,
+      "accuracy": 0.856,
+      "macro_f1": 0.8551375046622269,
+      "weighted_f1": 0.8551375046622269,
+      "throughput_samples_per_sec": 321.64579473263586
+    },
+    {
+      "noise_ratio": 0.3,
+      "accuracy": 0.854,
+      "macro_f1": 0.8516899913827608,
+      "weighted_f1": 0.8516899913827608,
+      "throughput_samples_per_sec": 320.2398559340999
+    },
+    {
+      "noise_ratio": 0.4,
+      "accuracy": 0.836,
+      "macro_f1": 0.8351249738262787,
+      "weighted_f1": 0.8351249738262787,
+      "throughput_samples_per_sec": 318.7885184244634
+    },
+    {
+      "noise_ratio": 0.5,
+      "accuracy": 0.814,
+      "macro_f1": 0.8133882754727784,
+      "weighted_f1": 0.8133882754727784,
+      "throughput_samples_per_sec": 318.32129537068147
+    },
+    {
+      "noise_ratio": 0.6,
+      "accuracy": 0.802,
+      "macro_f1": 0.8004364830571727,
+      "weighted_f1": 0.8004364830571727,
+      "throughput_samples_per_sec": 318.51714194121206
+    },
+    {
+      "noise_ratio": 0.7,
+      "accuracy": 0.798,
+      "macro_f1": 0.8001041721504878,
+      "weighted_f1": 0.8001041721504878,
+      "throughput_samples_per_sec": 319.8725470705334
+    },
+    {
+      "noise_ratio": 0.8,
+      "accuracy": 0.732,
+      "macro_f1": 0.7368996512005991,
+      "weighted_f1": 0.736899651200599,
+      "throughput_samples_per_sec": 322.2985936212557
+    },
+    {
+      "noise_ratio": 0.9,
+      "accuracy": 0.708,
+      "macro_f1": 0.7115439640838103,
+      "weighted_f1": 0.7115439640838104,
+      "throughput_samples_per_sec": 328.3044598698194
+    }
+  ],
+  "ernie-2.0-base-en": [
+    {
+      "noise_ratio": 0.1,
+      "accuracy": 0.884,
+      "macro_f1": 0.8827087157902674,
+      "weighted_f1": 0.8827087157902676,
+      "throughput_samples_per_sec": 324.03547999538546
+    },
+    {
+      "noise_ratio": 0.2,
+      "accuracy": 0.866,
+      "macro_f1": 0.8653385158742903,
+      "weighted_f1": 0.8653385158742904,
+      "throughput_samples_per_sec": 323.81587590842696
+    },
+    {
+      "noise_ratio": 0.3,
+      "accuracy": 0.874,
+      "macro_f1": 0.8727942468103425,
+      "weighted_f1": 0.8727942468103425,
+      "throughput_samples_per_sec": 320.7716725060456
+    },
+    {
+      "noise_ratio": 0.4,
+      "accuracy": 0.866,
+      "macro_f1": 0.8658494428589607,
+      "weighted_f1": 0.8658494428589608,
+      "throughput_samples_per_sec": 319.6361651700817
+    },
+    {
+      "noise_ratio": 0.5,
+      "accuracy": 0.85,
+      "macro_f1": 0.8494243285072806,
+      "weighted_f1": 0.8494243285072806,
+      "throughput_samples_per_sec": 318.71034011977224
+    },
+    {
+      "noise_ratio": 0.6,
+      "accuracy": 0.844,
+      "macro_f1": 0.8437144918335869,
+      "weighted_f1": 0.8437144918335868,
+      "throughput_samples_per_sec": 318.51670308757343
+    },
+    {
+      "noise_ratio": 0.7,
+      "accuracy": 0.822,
+      "macro_f1": 0.8251815696735774,
+      "weighted_f1": 0.8251815696735775,
+      "throughput_samples_per_sec": 318.64753251915346
+    },
+    {
+      "noise_ratio": 0.8,
+      "accuracy": 0.768,
+      "macro_f1": 0.7716041903647908,
+      "weighted_f1": 0.7716041903647907,
+      "throughput_samples_per_sec": 320.3177958897455
+    },
+    {
+      "noise_ratio": 0.9,
+      "accuracy": 0.642,
+      "macro_f1": 0.6508774188952807,
+      "weighted_f1": 0.6508774188952807,
+      "throughput_samples_per_sec": 320.8776529942259
+    }
+  ],
+  "chinese-macbert-base": [
+    {
+      "noise_ratio": 0.1,
+      "accuracy": 0.838,
+      "macro_f1": 0.8385946758024898,
+      "weighted_f1": 0.8385946758024898,
+      "throughput_samples_per_sec": 323.9545631890095
+    },
+    {
+      "noise_ratio": 0.2,
+      "accuracy": 0.824,
+      "macro_f1": 0.8241411950939078,
+      "weighted_f1": 0.8241411950939077,
+      "throughput_samples_per_sec": 322.5124073577895
+    },
+    {
+      "noise_ratio": 0.3,
+      "accuracy": 0.82,
+      "macro_f1": 0.8205689567869442,
+      "weighted_f1": 0.8205689567869442,
+      "throughput_samples_per_sec": 321.4956447421126
+    },
+    {
+      "noise_ratio": 0.4,
+      "accuracy": 0.796,
+      "macro_f1": 0.7948313549067694,
+      "weighted_f1": 0.7948313549067695,
+      "throughput_samples_per_sec": 319.51471756803943
+    },
+    {
+      "noise_ratio": 0.5,
+      "accuracy": 0.74,
+      "macro_f1": 0.7342816712165371,
+      "weighted_f1": 0.7342816712165371,
+      "throughput_samples_per_sec": 318.38324119415915
+    },
+    {
+      "noise_ratio": 0.6,
+      "accuracy": 0.684,
+      "macro_f1": 0.6813276939929426,
+      "weighted_f1": 0.6813276939929426,
+      "throughput_samples_per_sec": 318.85934777729653
+    },
+    {
+      "noise_ratio": 0.7,
+      "accuracy": 0.63,
+      "macro_f1": 0.6313429454032359,
+      "weighted_f1": 0.6313429454032358,
+      "throughput_samples_per_sec": 319.2726745133377
+    },
+    {
+      "noise_ratio": 0.8,
+      "accuracy": 0.56,
+      "macro_f1": 0.5501519153930837,
+      "weighted_f1": 0.5501519153930837,
+      "throughput_samples_per_sec": 320.8426447375339
+    },
+    {
+      "noise_ratio": 0.9,
+      "accuracy": 0.462,
+      "macro_f1": 0.4654699950780389,
+      "weighted_f1": 0.4654699950780389,
+      "throughput_samples_per_sec": 321.8667265279687
+    }
+  ],
+  "xlnet-base-cased": [
+    {
+      "noise_ratio": 0.1,
+      "accuracy": 0.89,
+      "macro_f1": 0.8880596045958666,
+      "weighted_f1": 0.8880596045958666,
+      "throughput_samples_per_sec": 228.43141539990708
+    },
+    {
+      "noise_ratio": 0.2,
+      "accuracy": 0.884,
+      "macro_f1": 0.8816052937348822,
+      "weighted_f1": 0.8816052937348821,
+      "throughput_samples_per_sec": 227.51430695758356
+    },
+    {
+      "noise_ratio": 0.3,
+      "accuracy": 0.892,
+      "macro_f1": 0.8904233547498654,
+      "weighted_f1": 0.8904233547498653,
+      "throughput_samples_per_sec": 225.95464930636956
+    },
+    {
+      "noise_ratio": 0.4,
+      "accuracy": 0.862,
+      "macro_f1": 0.8604999989648483,
+      "weighted_f1": 0.8604999989648484,
+      "throughput_samples_per_sec": 225.61071644972813
+    },
+    {
+      "noise_ratio": 0.5,
+      "accuracy": 0.852,
+      "macro_f1": 0.8499065697717174,
+      "weighted_f1": 0.8499065697717174,
+      "throughput_samples_per_sec": 226.0692772467952
+    },
+    {
+      "noise_ratio": 0.6,
+      "accuracy": 0.81,
+      "macro_f1": 0.8064340132750809,
+      "weighted_f1": 0.8064340132750809,
+      "throughput_samples_per_sec": 226.67196697701365
+    },
+    {
+      "noise_ratio": 0.7,
+      "accuracy": 0.802,
+      "macro_f1": 0.799518564571415,
+      "weighted_f1": 0.799518564571415,
+      "throughput_samples_per_sec": 227.18571306029702
+    },
+    {
+      "noise_ratio": 0.8,
+      "accuracy": 0.784,
+      "macro_f1": 0.7837022781463043,
+      "weighted_f1": 0.7837022781463043,
+      "throughput_samples_per_sec": 227.88366749419103
+    },
+    {
+      "noise_ratio": 0.9,
+      "accuracy": 0.688,
+      "macro_f1": 0.6962553493466623,
+      "weighted_f1": 0.6962553493466623,
+      "throughput_samples_per_sec": 228.543773529922
+    }
+  ],
+  "albert-base-v2": [
+    {
+      "noise_ratio": 0.1,
+      "accuracy": 0.842,
+      "macro_f1": 0.8451301608827462,
+      "weighted_f1": 0.8451301608827464,
+      "throughput_samples_per_sec": 265.30846105561784
+    },
+    {
+      "noise_ratio": 0.2,
+      "accuracy": 0.816,
+      "macro_f1": 0.8205373443606578,
+      "weighted_f1": 0.820537344360658,
+      "throughput_samples_per_sec": 264.2025344557281
+    },
+    {
+      "noise_ratio": 0.3,
+      "accuracy": 0.824,
+      "macro_f1": 0.825235190558892,
+      "weighted_f1": 0.825235190558892,
+      "throughput_samples_per_sec": 262.78672350316214
+    },
+    {
+      "noise_ratio": 0.4,
+      "accuracy": 0.792,
+      "macro_f1": 0.7936337751008128,
+      "weighted_f1": 0.7936337751008128,
+      "throughput_samples_per_sec": 262.2877591566416
+    },
+    {
+      "noise_ratio": 0.5,
+      "accuracy": 0.764,
+      "macro_f1": 0.7702913787677168,
+      "weighted_f1": 0.7702913787677168,
+      "throughput_samples_per_sec": 262.31998319290426
+    },
+    {
+      "noise_ratio": 0.6,
+      "accuracy": 0.738,
+      "macro_f1": 0.7412652872067536,
+      "weighted_f1": 0.7412652872067536,
+      "throughput_samples_per_sec": 262.77411886473175
+    },
+    {
+      "noise_ratio": 0.7,
+      "accuracy": 0.716,
+      "macro_f1": 0.7188209637575843,
+      "weighted_f1": 0.7188209637575843,
+      "throughput_samples_per_sec": 263.66546901506103
+    },
+    {
+      "noise_ratio": 0.8,
+      "accuracy": 0.686,
+      "macro_f1": 0.6917465856763124,
+      "weighted_f1": 0.6917465856763124,
+      "throughput_samples_per_sec": 264.3181476978031
+    },
+    {
+      "noise_ratio": 0.9,
+      "accuracy": 0.574,
+      "macro_f1": 0.5778559122199214,
+      "weighted_f1": 0.5778559122199214,
+      "throughput_samples_per_sec": 265.1006300035051
+    }
+  ],
+  "electra-base-discriminator": [
+    {
+      "noise_ratio": 0.1,
+      "accuracy": 0.87,
+      "macro_f1": 0.8689116530926919,
+      "weighted_f1": 0.8689116530926917,
+      "throughput_samples_per_sec": 322.36982497163035
+    },
+    {
+      "noise_ratio": 0.2,
+      "accuracy": 0.852,
+      "macro_f1": 0.8505910640083616,
+      "weighted_f1": 0.8505910640083616,
+      "throughput_samples_per_sec": 321.48892506337927
+    },
+    {
+      "noise_ratio": 0.3,
+      "accuracy": 0.86,
+      "macro_f1": 0.8584262871773415,
+      "weighted_f1": 0.8584262871773416,
+      "throughput_samples_per_sec": 319.5200235696547
+    },
+    {
+      "noise_ratio": 0.4,
+      "accuracy": 0.842,
+      "macro_f1": 0.83954473730129,
+      "weighted_f1": 0.83954473730129,
+      "throughput_samples_per_sec": 318.0528887714151
+    },
+    {
+      "noise_ratio": 0.5,
+      "accuracy": 0.82,
+      "macro_f1": 0.8167603344184668,
+      "weighted_f1": 0.8167603344184667,
+      "throughput_samples_per_sec": 318.0766252184783
+    },
+    {
+      "noise_ratio": 0.6,
+      "accuracy": 0.802,
+      "macro_f1": 0.7986139986418884,
+      "weighted_f1": 0.7986139986418884,
+      "throughput_samples_per_sec": 317.81196863432126
+    },
+    {
+      "noise_ratio": 0.7,
+      "accuracy": 0.788,
+      "macro_f1": 0.7848576597149688,
+      "weighted_f1": 0.7848576597149688,
+      "throughput_samples_per_sec": 318.59941481498623
+    },
+    {
+      "noise_ratio": 0.8,
+      "accuracy": 0.756,
+      "macro_f1": 0.7503325402546314,
+      "weighted_f1": 0.7503325402546314,
+      "throughput_samples_per_sec": 320.0217940549639
+    },
+    {
+      "noise_ratio": 0.9,
+      "accuracy": 0.668,
+      "macro_f1": 0.665786422967169,
+      "weighted_f1": 0.665786422967169,
+      "throughput_samples_per_sec": 321.3380486513265
+    }
+  ],
+  "codebert-base": [
+    {
+      "noise_ratio": 0.1,
+      "accuracy": 0.874,
+      "macro_f1": 0.8737171077060177,
+      "weighted_f1": 0.8737171077060177,
+      "throughput_samples_per_sec": 322.3389907085691
+    },
+    {
+      "noise_ratio": 0.2,
+      "accuracy": 0.876,
+      "macro_f1": 0.8762035096708697,
+      "weighted_f1": 0.8762035096708698,
+      "throughput_samples_per_sec": 320.0551049694815
+    },
+    {
+      "noise_ratio": 0.3,
+      "accuracy": 0.866,
+      "macro_f1": 0.8653010741731837,
+      "weighted_f1": 0.8653010741731837,
+      "throughput_samples_per_sec": 318.25413810810534
+    },
+    {
+      "noise_ratio": 0.4,
+      "accuracy": 0.848,
+      "macro_f1": 0.8459602580065629,
+      "weighted_f1": 0.8459602580065629,
+      "throughput_samples_per_sec": 316.90819583842523
+    },
+    {
+      "noise_ratio": 0.5,
+      "accuracy": 0.826,
+      "macro_f1": 0.8267357137458253,
+      "weighted_f1": 0.8267357137458252,
+      "throughput_samples_per_sec": 317.6939135514984
+    },
+    {
+      "noise_ratio": 0.6,
+      "accuracy": 0.81,
+      "macro_f1": 0.8109643857543019,
+      "weighted_f1": 0.8109643857543019,
+      "throughput_samples_per_sec": 317.4405011603941
+    },
+    {
+      "noise_ratio": 0.7,
+      "accuracy": 0.782,
+      "macro_f1": 0.7848174213590922,
+      "weighted_f1": 0.7848174213590922,
+      "throughput_samples_per_sec": 319.0392682193517
+    },
+    {
+      "noise_ratio": 0.8,
+      "accuracy": 0.756,
+      "macro_f1": 0.7568557294295569,
+      "weighted_f1": 0.7568557294295569,
+      "throughput_samples_per_sec": 322.124427440283
+    },
+    {
+      "noise_ratio": 0.9,
+      "accuracy": 0.692,
+      "macro_f1": 0.6962596819655948,
+      "weighted_f1": 0.6962596819655948,
+      "throughput_samples_per_sec": 328.28787801764236
+    }
+  ]
+}
