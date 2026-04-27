@@ -32,3 +32,4 @@ pytorch_model.bin
 # Misc
 .DS_Store
 .ipynb_checkpoints/
+outputs
