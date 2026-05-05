@@ -7,18 +7,22 @@ from typing import Any, Dict, List, Tuple
 from sklearn.model_selection import train_test_split
 
 
-def load_json_data(path: str) -> List[Dict[str, Any]]:
+def load_json_data(path: str) -> Any:
     with open(path, "r", encoding="utf-8") as f:
-        first_char = f.read(1)
+        # 寻找第一个非空白字符
+        while True:
+            char = f.read(1)
+            if not char or not char.isspace():
+                break
         f.seek(0)
 
-        if first_char == "[":
+        if char in ("[", "{"):
             data = json.load(f)
         else:
             data = [json.loads(line) for line in f if line.strip()]
 
-    if not isinstance(data, list):
-        raise ValueError("数据文件必须是 JSON list 或 JSONL 格式。")
+    if not isinstance(data, (list, dict)):
+        raise ValueError("数据文件必须是 JSON list, JSON dict 或 JSONL 格式。")
     return data
 
 
