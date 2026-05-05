@@ -184,7 +184,15 @@ def main():
     scl_temp = config.get("scl_temperature", 0.07)
     cons_temp = config.get("consistency_temperature", 1.0)
 
-    best_macro_f1 = 0.0
+    baseline_metrics = evaluate(model, valid_loader, device, labels_list, id2label)
+    best_macro_f1 = baseline_metrics["macro_f1"]
+
+    print(
+        f"Stage 1 baseline before Stage 2 | "
+        f"Eval Loss: {baseline_metrics['eval_loss']:.4f} | "
+        f"Macro F1: {baseline_metrics['macro_f1']:.4f} | "
+        f"Acc: {baseline_metrics['accuracy']:.4f}"
+    )
 
     print("Starting Stage 2 Robust Training...")
     for epoch in range(1, epochs + 1):
@@ -200,7 +208,13 @@ def main():
             labels = batch["labels"].to(device)
             
             # Fetch sample weights
-            batch_weights = torch.tensor([hard_weights_dict.get(str(i), 1.0) for i in batch["ids"]], device=device)
+            batch_weights = torch.tensor(
+                [hard_weights_dict.get(str(i), 1.0) for i in batch["ids"]],
+                device=device
+            )
+
+            # Normalize weights to avoid amplifying the overall CE loss scale
+            batch_weights = batch_weights / batch_weights.mean().clamp_min(1e-6)
 
             with autocast(enabled=use_fp16):
                 outputs_orig = model(input_ids, attention_mask, return_features=True)
@@ -215,7 +229,10 @@ def main():
                 
                 kl_loss = symmetric_kl_loss(outputs_orig["logits"], outputs_aug["logits"], temperature=cons_temp)
                 
-                loss = ce_loss_orig + ce_loss_aug + lambda_scl * scl_loss + lambda_cons * kl_loss
+                loss = 0.5 * (ce_loss_orig + ce_loss_aug) \
+                        + lambda_scl * scl_loss \
+                        + lambda_cons * kl_loss
+
                 loss = loss / grad_accum_steps
 
             scaler.scale(loss).backward()
