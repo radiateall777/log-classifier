@@ -97,3 +97,15 @@ bash baselines/run_all_baselines.sh
 | ALBERT | `albert-base-v2` | |
 | ELECTRA | `google/electra-base-discriminator` | |
 | CodeBERT | `microsoft/codebert-base` | |
+
+
+1. 固定 UniXcoder teacher。
+2. 导出 train/dev clean teacher logits。
+3. 初始化 6-layer student。
+4. 训练 Clean KD。
+5. 若 clean ≥ 90%，进入 HPRD。
+6. HPRD 中使用 UNK-token fixed-ratio noise。
+7. 使用 clean ≥ 90% 作为硬约束保存 robust_avg_0.1_0.5 最优模型。
+8. 对 best checkpoint 做 p=0.1~0.9 完整评估。
+9. 测 end-to-end throughput 和 model-only throughput。
+10. 若 throughput < 391.52，做 max_length / FP16 / ONNX 优化。
