@@ -1,0 +1,23 @@
+checkpoint_dir: outputs/teacher/distill_unixcoder_6layer_robust_seed42/best
+model_name: microsoft/unixcoder-base
+student_keep_layers: 6
+
+data_path: data/random_samples_splits.json
+split: test
+output_report: outputs/teacher/distill_unixcoder_6layer_robust_seed42/eval_quality_report.json
+
+max_length: 512
+batch_size: 64
+throughput_batch_size: 64
+throughput_rounds: 5
+throughput_warmup_rounds: 1
+robust_eval: true
+fp16_eval: true
+seed: 42
+
+clean_accuracy_target: 0.90
+throughput_target_ratio: 1.20
+# Fill this with the current algorithm's measured throughput to check the +20% target.
+# baseline_throughput_samples_per_sec: 100.0
+# Fill this if you have an absolute high-noise robustness threshold.
+# robust_accuracy_target: 0.90
