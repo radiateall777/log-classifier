@@ -1,8 +1,6 @@
 import argparse
 import math
 import os
-import random
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -14,7 +12,6 @@ from transformers import AutoTokenizer, get_linear_schedule_with_warmup
 
 from log_classifier.teacher.data import ClassificationDataset, read_dataset
 from log_classifier.teacher.model import CodeBERTClassifier
-from log_classifier.teacher.token_noise import apply_unk_token_noise
 from log_classifier.teacher.train_stage1_ce import (
     evaluate,
     forward_ce_only,
@@ -155,12 +152,13 @@ def distillation_loss(
     temperature,
     ce_weight,
     kd_weight,
+    label_smoothing=0.0,
     student_features=None,
     teacher_features=None,
     projected_student_features=None,
     feature_weight=0.0,
 ):
-    ce_loss = F.cross_entropy(student_logits, labels)
+    ce_loss = F.cross_entropy(student_logits, labels, label_smoothing=float(label_smoothing))
     kd_loss = kd_kl_loss(student_logits, teacher_logits, temperature)
     if feature_weight > 0 and teacher_features is not None:
         features_for_loss = projected_student_features
@@ -178,33 +176,12 @@ def distillation_loss(
     }
 
 
-def robust_distillation_loss(
-    student_clean_logits,
-    student_noisy_logits,
-    teacher_noisy_logits,
-    labels,
-    temperature,
-    robust_ce_weight,
-    robust_kd_weight,
-    consistency_weight,
-):
-    robust_ce_loss = F.cross_entropy(student_noisy_logits, labels)
-    robust_kd_loss = kd_kl_loss(student_noisy_logits, teacher_noisy_logits, temperature)
-    consistency_loss = symmetric_consistency_loss(
-        clean_logits=student_clean_logits,
-        noisy_logits=student_noisy_logits,
+def rdrop_loss(student_logits_a, student_logits_b, temperature):
+    return symmetric_consistency_loss(
+        clean_logits=student_logits_a,
+        noisy_logits=student_logits_b,
         temperature=temperature,
     )
-    loss = (
-        robust_ce_weight * robust_ce_loss
-        + robust_kd_weight * robust_kd_loss
-        + consistency_weight * consistency_loss
-    )
-    return loss, {
-        "robust_ce_loss": robust_ce_loss.detach(),
-        "robust_kd_loss": robust_kd_loss.detach(),
-        "consistency_loss": consistency_loss.detach(),
-    }
 
 
 def infer_hidden_size(model):
@@ -268,14 +245,6 @@ def truncate_student_layers(student, keep_layers):
     )
 
 
-def move_encoding_to_device(encodings, device):
-    return {key: value.to(device) for key, value in encodings.items()}
-
-
-def sample_noise_prob(noise_probs, rng):
-    return float(rng.choice(noise_probs))
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, required=True, help="Path to YAML config")
@@ -325,10 +294,7 @@ def main():
 
     teacher_max_length = int(config.get("teacher_max_length", config.get("max_length", 512)))
     student_max_length = int(config.get("student_max_length", config.get("max_length", 384)))
-    use_robust_distill = bool(config.get("robust_distill", True))
-    robust_noise_probs = [float(p) for p in config.get("robust_noise_probs", [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])]
-    robust_min_keep_tokens = int(config.get("robust_min_keep_tokens", 1))
-    noise_rng = random.Random(int(config.get("seed", 42)))
+    use_rdrop = bool(config.get("use_rdrop", True))
 
     train_loader = DataLoader(
         train_dataset,
@@ -404,9 +370,8 @@ def main():
     ce_weight = float(config.get("ce_weight", 0.45))
     kd_weight = float(config.get("kd_weight", 0.45))
     feature_weight = float(config.get("feature_weight", 0.1))
-    robust_ce_weight = float(config.get("robust_ce_weight", 0.15))
-    robust_kd_weight = float(config.get("robust_kd_weight", 0.35))
-    consistency_weight = float(config.get("consistency_weight", 0.15))
+    label_smoothing = float(config.get("label_smoothing", 0.05))
+    rdrop_weight = float(config.get("rdrop_weight", 0.2))
 
     best_macro_f1 = -1.0
 
@@ -414,8 +379,8 @@ def main():
     print(
         f"epochs={epochs}, total_steps={total_steps}, warmup_steps={warmup_steps}, "
         f"temperature={temperature}, ce_weight={ce_weight}, kd_weight={kd_weight}, "
-        f"feature_weight={feature_weight}, robust_distill={use_robust_distill}, "
-        f"robust_noise_probs={robust_noise_probs}"
+        f"feature_weight={feature_weight}, use_rdrop={use_rdrop}, "
+        f"label_smoothing={label_smoothing}, rdrop_weight={rdrop_weight}"
     )
 
     for epoch in range(1, epochs + 1):
@@ -424,10 +389,7 @@ def main():
         total_ce_loss = 0.0
         total_kd_loss = 0.0
         total_feature_loss = 0.0
-        total_robust_ce_loss = 0.0
-        total_robust_kd_loss = 0.0
-        total_consistency_loss = 0.0
-        total_noise_prob = 0.0
+        total_rdrop_loss = 0.0
 
         optimizer.zero_grad(set_to_none=True)
 
@@ -439,7 +401,6 @@ def main():
             student_input_ids = batch["student_input_ids"].to(device)
             student_attention_mask = batch["student_attention_mask"].to(device)
             labels = batch["labels"].to(device)
-            batch_noise_prob = None
 
             with torch.inference_mode():
                 teacher_outputs = forward_with_features(
@@ -461,6 +422,23 @@ def main():
                 student_logits = student_outputs["logits"]
                 student_features = student_outputs["features"]
                 projected_student_features = feature_projector(student_features)
+
+                if use_rdrop:
+                    student_outputs_b = forward_ce_only(
+                        student,
+                        student_input_ids,
+                        student_attention_mask,
+                        labels,
+                    )
+                    student_logits_b = student_outputs_b["logits"]
+                    rdrop_term = rdrop_loss(
+                        student_logits_a=student_logits,
+                        student_logits_b=student_logits_b,
+                        temperature=temperature,
+                    )
+                else:
+                    rdrop_term = student_logits.new_tensor(0.0)
+
                 clean_loss, clean_parts = distillation_loss(
                     student_logits=student_logits,
                     teacher_logits=teacher_logits,
@@ -468,69 +446,13 @@ def main():
                     temperature=temperature,
                     ce_weight=ce_weight,
                     kd_weight=kd_weight,
+                    label_smoothing=label_smoothing,
                     student_features=student_features,
                     teacher_features=teacher_features,
                     projected_student_features=projected_student_features,
                     feature_weight=feature_weight,
                 )
-
-                if use_robust_distill:
-                    batch_noise_prob = sample_noise_prob(robust_noise_probs, noise_rng)
-                    teacher_generator = torch.Generator(device=device)
-                    teacher_generator.manual_seed(int(config.get("seed", 42)) + epoch * 100000 + step * 97 + 13)
-                    student_generator = torch.Generator(device=device)
-                    student_generator.manual_seed(int(config.get("seed", 42)) + epoch * 100000 + step * 97 + 29)
-
-                    teacher_noisy_input_ids, _ = apply_unk_token_noise(
-                        input_ids=teacher_input_ids,
-                        attention_mask=teacher_attention_mask,
-                        tokenizer=teacher_tokenizer,
-                        noise_prob=batch_noise_prob,
-                        min_keep_tokens=robust_min_keep_tokens,
-                        generator=teacher_generator,
-                    )
-                    student_noisy_input_ids, _ = apply_unk_token_noise(
-                        input_ids=student_input_ids,
-                        attention_mask=student_attention_mask,
-                        tokenizer=student_tokenizer,
-                        noise_prob=batch_noise_prob,
-                        min_keep_tokens=robust_min_keep_tokens,
-                        generator=student_generator,
-                    )
-                    with torch.inference_mode():
-                        teacher_noisy_outputs = forward_ce_only(
-                            teacher,
-                            teacher_noisy_input_ids,
-                            teacher_attention_mask,
-                            labels,
-                        )
-                        teacher_noisy_logits = teacher_noisy_outputs["logits"]
-
-                    student_noisy_outputs = forward_ce_only(
-                        student,
-                        student_noisy_input_ids,
-                        student_attention_mask,
-                        labels,
-                    )
-                    robust_loss, robust_parts = robust_distillation_loss(
-                        student_clean_logits=student_logits,
-                        student_noisy_logits=student_noisy_outputs["logits"],
-                        teacher_noisy_logits=teacher_noisy_logits,
-                        labels=labels,
-                        temperature=temperature,
-                        robust_ce_weight=robust_ce_weight,
-                        robust_kd_weight=robust_kd_weight,
-                        consistency_weight=consistency_weight,
-                    )
-                else:
-                    robust_loss = student_logits.new_tensor(0.0)
-                    robust_parts = {
-                        "robust_ce_loss": student_logits.new_tensor(0.0),
-                        "robust_kd_loss": student_logits.new_tensor(0.0),
-                        "consistency_loss": student_logits.new_tensor(0.0),
-                    }
-
-                loss = clean_loss + robust_loss
+                loss = clean_loss + rdrop_weight * rdrop_term
                 loss_for_backward = loss / grad_accum_steps
 
             scaler.scale(loss_for_backward).backward()
@@ -539,11 +461,7 @@ def main():
             total_ce_loss += clean_parts["ce_loss"].item()
             total_kd_loss += clean_parts["kd_loss"].item()
             total_feature_loss += clean_parts["feature_loss"].item()
-            total_robust_ce_loss += robust_parts["robust_ce_loss"].item()
-            total_robust_kd_loss += robust_parts["robust_kd_loss"].item()
-            total_consistency_loss += robust_parts["consistency_loss"].item()
-            if batch_noise_prob is not None:
-                total_noise_prob += batch_noise_prob
+            total_rdrop_loss += rdrop_term.item()
 
             if (step + 1) % grad_accum_steps == 0 or (step + 1) == len(train_loader):
                 optimizer_step_with_amp(
@@ -559,8 +477,7 @@ def main():
                     "ce": f"{clean_parts['ce_loss'].item():.4f}",
                     "kd": f"{clean_parts['kd_loss'].item():.4f}",
                     "feat": f"{clean_parts['feature_loss'].item():.4f}",
-                    "rob": f"{robust_loss.item():.4f}",
-                    "p": "na" if batch_noise_prob is None else f"{batch_noise_prob:.1f}",
+                    "rdrop": f"{rdrop_term.item():.4f}",
                 }
             )
 
@@ -569,10 +486,7 @@ def main():
             "train_ce_loss": total_ce_loss / max(len(train_loader), 1),
             "train_kd_loss": total_kd_loss / max(len(train_loader), 1),
             "train_feature_loss": total_feature_loss / max(len(train_loader), 1),
-            "train_robust_ce_loss": total_robust_ce_loss / max(len(train_loader), 1),
-            "train_robust_kd_loss": total_robust_kd_loss / max(len(train_loader), 1),
-            "train_consistency_loss": total_consistency_loss / max(len(train_loader), 1),
-            "train_avg_noise_prob": total_noise_prob / max(len(train_loader), 1) if use_robust_distill else None,
+            "train_rdrop_loss": total_rdrop_loss / max(len(train_loader), 1),
             "epoch": epoch,
         }
 
@@ -591,7 +505,7 @@ def main():
             f"CE: {val_metrics['train_ce_loss']:.4f} | "
             f"KD: {val_metrics['train_kd_loss']:.4f} | "
             f"Feat: {val_metrics['train_feature_loss']:.4f} | "
-            f"RobustKD: {val_metrics['train_robust_kd_loss']:.4f} | "
+            f"RDrop: {val_metrics['train_rdrop_loss']:.4f} | "
             f"Eval Loss: {val_metrics['eval_loss']:.4f} | "
             f"Macro F1: {val_metrics['macro_f1']:.4f} | "
             f"Acc: {val_metrics['accuracy']:.4f}"
