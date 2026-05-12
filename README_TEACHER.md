@@ -47,22 +47,26 @@ training a smaller student model for higher inference throughput.
 
 Default student:
 ```text
-distilbert-base-uncased
+6-layer microsoft/unixcoder-base
 ```
 
 Recommended command:
 ```
 python -m log_classifier.teacher.train_distill_student \
-  --config configs/teacher/distill_unixcoder_to_distilbert_seed42.yaml
+  --config configs/teacher/distill_unixcoder_6layer_robust_seed42.yaml
 ```
 
 The distilled student checkpoint is saved under:
 ```
-outputs/teacher/distill_unixcoder_to_distilbert_seed42/best/
+outputs/teacher/distill_unixcoder_6layer_robust_seed42/best/
 ```
 
 Key knobs:
-- `student_model_name`: replace with another compact model if needed.
-- `student_max_length`: default is 384 to improve throughput.
+- `student_model_name`: default is UniXcoder so tokenizer and pretraining domain match the teacher.
+- `student_keep_layers`: default is 6, truncating the 12-layer encoder for faster inference.
+- `student_max_length`: default is 512 to protect accuracy; reduce after the student reaches target quality.
 - `temperature`: soft-label distillation temperature.
 - `ce_weight` / `kd_weight`: balance ground-truth CE and teacher KL losses.
+- `feature_weight`: aligns the student CLS feature space with the teacher feature space.
+- `robust_distill`: trains the student on noisy views as well as clean views.
+- `robust_ce_weight` / `robust_kd_weight` / `consistency_weight`: control noisy-label supervision, noisy teacher KD, and clean-noisy prediction consistency.
