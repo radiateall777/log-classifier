@@ -1,0 +1,23 @@
+teacher_model_name: microsoft/unixcoder-base
+teacher_checkpoint_dir: outputs/teacher/ce_unixcoder_seed42/best
+
+student_model_name: distilbert-base-uncased
+data_path: data/random_samples_splits.json
+output_dir: outputs/teacher/distill_unixcoder_to_distilbert_seed42
+
+teacher_max_length: 512
+student_max_length: 384
+batch_size: 32
+eval_batch_size: 64
+learning_rate: 3.0e-5
+epochs: 10
+warmup_ratio: 0.1
+weight_decay: 0.01
+seed: 42
+gradient_accumulation_steps: 1
+fp16: true
+
+temperature: 2.0
+ce_weight: 0.3
+kd_weight: 0.7
+dropout_prob: 0.1

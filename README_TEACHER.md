@@ -38,3 +38,31 @@ best/
 ├── config_snapshot.json
 └── dev_logits.pt
 ```
+
+## Step2: Distill UniXcoder Teacher into a Faster Student
+
+Goal:
+keep the strong UniXcoder teacher as the accuracy and robustness source, while
+training a smaller student model for higher inference throughput.
+
+Default student:
+```text
+distilbert-base-uncased
+```
+
+Recommended command:
+```
+python -m log_classifier.teacher.train_distill_student \
+  --config configs/teacher/distill_unixcoder_to_distilbert_seed42.yaml
+```
+
+The distilled student checkpoint is saved under:
+```
+outputs/teacher/distill_unixcoder_to_distilbert_seed42/best/
+```
+
+Key knobs:
+- `student_model_name`: replace with another compact model if needed.
+- `student_max_length`: default is 384 to improve throughput.
+- `temperature`: soft-label distillation temperature.
+- `ce_weight` / `kd_weight`: balance ground-truth CE and teacher KL losses.
