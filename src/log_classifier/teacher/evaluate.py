@@ -45,13 +45,29 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(checkpoint_dir)
     
     print("Initializing model...")
+    state_dict = torch.load(os.path.join(checkpoint_dir, "pytorch_model.bin"), map_location="cpu")
+
+    inferred_keep_layers = config.get("student_keep_layers")
+    if inferred_keep_layers is None:
+        layer_prefix = "encoder.encoder.layer."
+        layer_indices = set()
+        for key in state_dict.keys():
+            if key.startswith(layer_prefix):
+                remainder = key[len(layer_prefix):]
+                index_str = remainder.split(".", 1)[0]
+                if index_str.isdigit():
+                    layer_indices.add(int(index_str))
+        if layer_indices:
+            inferred_keep_layers = max(layer_indices) + 1
+            print(f"Inferred student_keep_layers={inferred_keep_layers} from checkpoint weights")
+
     model = CodeBERTClassifier(
         model_name=config.get("model_name", "microsoft/codebert-base"),
         num_labels=num_labels
     )
-    truncate_student_layers(model, config.get("student_keep_layers"))
+    truncate_student_layers(model, inferred_keep_layers)
     # the encoder config should ideally be loaded from the checkpoint, but codebert-base works since its weights are restored
-    model.load_state_dict(torch.load(os.path.join(checkpoint_dir, "pytorch_model.bin"), map_location="cpu"))
+    model.load_state_dict(state_dict)
     model.to(device)
     model.eval()
 

@@ -159,6 +159,20 @@ def resolve_target(value, default):
     return float(default if value is None else value)
 
 
+def infer_keep_layers_from_state_dict(state_dict):
+    layer_prefix = "encoder.encoder.layer."
+    layer_indices = set()
+    for key in state_dict.keys():
+        if key.startswith(layer_prefix):
+            remainder = key[len(layer_prefix):]
+            index_str = remainder.split(".", 1)[0]
+            if index_str.isdigit():
+                layer_indices.add(int(index_str))
+    if not layer_indices:
+        return None
+    return max(layer_indices) + 1
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, required=True, help="Path to YAML config")
@@ -186,9 +200,13 @@ def main():
     print("Loading tokenizer and model...")
     tokenizer = AutoTokenizer.from_pretrained(checkpoint_dir)
     model = CodeBERTClassifier(model_name=model_name, num_labels=len(label2id))
-    truncate_student_layers(model, config.get("student_keep_layers"))
-
     state_dict = torch.load(os.path.join(checkpoint_dir, "pytorch_model.bin"), map_location="cpu")
+    inferred_keep_layers = config.get("student_keep_layers")
+    if inferred_keep_layers is None:
+        inferred_keep_layers = infer_keep_layers_from_state_dict(state_dict)
+        if inferred_keep_layers is not None:
+            print(f"Inferred student_keep_layers={inferred_keep_layers} from checkpoint weights")
+    truncate_student_layers(model, inferred_keep_layers)
     incompatible = model.load_state_dict(state_dict, strict=False)
     if incompatible.missing_keys or incompatible.unexpected_keys:
         print(f"missing_keys: {list(incompatible.missing_keys)}")
