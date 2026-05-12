@@ -2,7 +2,6 @@ import argparse
 import math
 import os
 import random
-import re
 
 import torch
 import torch.nn as nn
@@ -15,6 +14,7 @@ from transformers import AutoTokenizer, get_linear_schedule_with_warmup
 
 from log_classifier.teacher.data import ClassificationDataset, read_dataset
 from log_classifier.teacher.model import CodeBERTClassifier
+from log_classifier.teacher.token_noise import apply_unk_token_noise
 from log_classifier.teacher.train_stage1_ce import (
     evaluate,
     forward_ce_only,
@@ -32,79 +32,12 @@ from log_classifier.teacher.utils import (
 )
 
 
-class RobustTextAugmenter:
-    """Small label-preserving perturbations for robust distillation."""
-
-    def __init__(self, seed=42):
-        self.rng = random.Random(seed)
-        self.role_pattern = re.compile(
-            r"\b(user|assistant|Objective|Task|Details|Example)\s*:\s*",
-            re.IGNORECASE,
-        )
-        self.md_pattern = re.compile(r"```[a-zA-Z]*\n|```", re.IGNORECASE)
-        self.line_comment_pattern = re.compile(r"//.*$", re.MULTILINE)
-        self.block_comment_pattern = re.compile(r"/\*.*?\*/", re.DOTALL)
-        self.python_comment_pattern = re.compile(r"#.*$", re.MULTILINE)
-        self.noises = [
-            "Example usage:",
-            "The following is a simple implementation.",
-            "Here is the code:",
-            "Note:",
-            "Solution:",
-        ]
-        self.augmentations = [
-            self.remove_role_markers,
-            self.remove_markdown_noise,
-            self.remove_code_comments,
-            self.normalize_whitespace,
-            self.add_harmless_noise,
-            self.truncate_assistant_explanation,
-        ]
-
-    def augment(self, text):
-        aug_func = self.rng.choice(self.augmentations)
-        try:
-            augmented = aug_func(text)
-            return augmented if augmented.strip() else text
-        except Exception:
-            return text
-
-    def remove_role_markers(self, text):
-        return self.role_pattern.sub(" ", text).strip()
-
-    def remove_markdown_noise(self, text):
-        return self.md_pattern.sub("", text).strip()
-
-    def remove_code_comments(self, text):
-        text = self.block_comment_pattern.sub("", text)
-        text = self.line_comment_pattern.sub("", text)
-        text = self.python_comment_pattern.sub("", text)
-        return text.strip()
-
-    def normalize_whitespace(self, text):
-        return re.sub(r"[ \t]{2,}", " ", text)
-
-    def add_harmless_noise(self, text):
-        noise = self.rng.choice(self.noises)
-        return f"{noise}\n{text}" if self.rng.random() > 0.5 else f"{text}\n{noise}"
-
-    def truncate_assistant_explanation(self, text):
-        parts = text.split("assistant:", 1)
-        if len(parts) != 2:
-            return text
-        code_blocks = re.split(r"(```.*?```)", parts[1], flags=re.DOTALL)
-        if len(code_blocks) < 3:
-            return text
-        return parts[0] + "assistant:" + "".join(code_blocks[:-1])
-
-
 def collate_fn_distill(
     batch,
     teacher_tokenizer,
     student_tokenizer,
     teacher_max_length,
     student_max_length,
-    augmenter=None,
 ):
     texts = [item["text"] for item in batch]
     labels = torch.tensor([item["label"] for item in batch], dtype=torch.long)
@@ -131,19 +64,6 @@ def collate_fn_distill(
         "student_attention_mask": student_inputs["attention_mask"],
         "labels": labels,
     }
-
-    if augmenter is not None:
-        noisy_texts = [augmenter.augment(text) for text in texts]
-        teacher_noisy_inputs = tokenize_texts(teacher_tokenizer, noisy_texts, teacher_max_length)
-        student_noisy_inputs = tokenize_texts(student_tokenizer, noisy_texts, student_max_length)
-        collated.update(
-            {
-                "teacher_noisy_input_ids": teacher_noisy_inputs["input_ids"],
-                "teacher_noisy_attention_mask": teacher_noisy_inputs["attention_mask"],
-                "student_noisy_input_ids": student_noisy_inputs["input_ids"],
-                "student_noisy_attention_mask": student_noisy_inputs["attention_mask"],
-            }
-        )
 
     return collated
 
@@ -352,6 +272,10 @@ def move_encoding_to_device(encodings, device):
     return {key: value.to(device) for key, value in encodings.items()}
 
 
+def sample_noise_prob(noise_probs, rng):
+    return float(rng.choice(noise_probs))
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, required=True, help="Path to YAML config")
@@ -402,7 +326,9 @@ def main():
     teacher_max_length = int(config.get("teacher_max_length", config.get("max_length", 512)))
     student_max_length = int(config.get("student_max_length", config.get("max_length", 384)))
     use_robust_distill = bool(config.get("robust_distill", True))
-    augmenter = RobustTextAugmenter(seed=int(config.get("seed", 42))) if use_robust_distill else None
+    robust_noise_probs = [float(p) for p in config.get("robust_noise_probs", [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])]
+    robust_min_keep_tokens = int(config.get("robust_min_keep_tokens", 1))
+    noise_rng = random.Random(int(config.get("seed", 42)))
 
     train_loader = DataLoader(
         train_dataset,
@@ -414,7 +340,6 @@ def main():
             student_tokenizer,
             teacher_max_length,
             student_max_length,
-            augmenter,
         ),
     )
 
@@ -489,7 +414,8 @@ def main():
     print(
         f"epochs={epochs}, total_steps={total_steps}, warmup_steps={warmup_steps}, "
         f"temperature={temperature}, ce_weight={ce_weight}, kd_weight={kd_weight}, "
-        f"feature_weight={feature_weight}, robust_distill={use_robust_distill}"
+        f"feature_weight={feature_weight}, robust_distill={use_robust_distill}, "
+        f"robust_noise_probs={robust_noise_probs}"
     )
 
     for epoch in range(1, epochs + 1):
@@ -501,6 +427,7 @@ def main():
         total_robust_ce_loss = 0.0
         total_robust_kd_loss = 0.0
         total_consistency_loss = 0.0
+        total_noise_prob = 0.0
 
         optimizer.zero_grad(set_to_none=True)
 
@@ -512,6 +439,7 @@ def main():
             student_input_ids = batch["student_input_ids"].to(device)
             student_attention_mask = batch["student_attention_mask"].to(device)
             labels = batch["labels"].to(device)
+            batch_noise_prob = None
 
             with torch.inference_mode():
                 teacher_outputs = forward_with_features(
@@ -547,27 +475,41 @@ def main():
                 )
 
                 if use_robust_distill:
-                    teacher_noisy_inputs = {
-                        "input_ids": batch["teacher_noisy_input_ids"].to(device),
-                        "attention_mask": batch["teacher_noisy_attention_mask"].to(device),
-                    }
-                    student_noisy_inputs = {
-                        "input_ids": batch["student_noisy_input_ids"].to(device),
-                        "attention_mask": batch["student_noisy_attention_mask"].to(device),
-                    }
+                    batch_noise_prob = sample_noise_prob(robust_noise_probs, noise_rng)
+                    teacher_generator = torch.Generator(device=device)
+                    teacher_generator.manual_seed(int(config.get("seed", 42)) + epoch * 100000 + step * 97 + 13)
+                    student_generator = torch.Generator(device=device)
+                    student_generator.manual_seed(int(config.get("seed", 42)) + epoch * 100000 + step * 97 + 29)
+
+                    teacher_noisy_input_ids, _ = apply_unk_token_noise(
+                        input_ids=teacher_input_ids,
+                        attention_mask=teacher_attention_mask,
+                        tokenizer=teacher_tokenizer,
+                        noise_prob=batch_noise_prob,
+                        min_keep_tokens=robust_min_keep_tokens,
+                        generator=teacher_generator,
+                    )
+                    student_noisy_input_ids, _ = apply_unk_token_noise(
+                        input_ids=student_input_ids,
+                        attention_mask=student_attention_mask,
+                        tokenizer=student_tokenizer,
+                        noise_prob=batch_noise_prob,
+                        min_keep_tokens=robust_min_keep_tokens,
+                        generator=student_generator,
+                    )
                     with torch.inference_mode():
                         teacher_noisy_outputs = forward_ce_only(
                             teacher,
-                            teacher_noisy_inputs["input_ids"],
-                            teacher_noisy_inputs["attention_mask"],
+                            teacher_noisy_input_ids,
+                            teacher_attention_mask,
                             labels,
                         )
                         teacher_noisy_logits = teacher_noisy_outputs["logits"]
 
                     student_noisy_outputs = forward_ce_only(
                         student,
-                        student_noisy_inputs["input_ids"],
-                        student_noisy_inputs["attention_mask"],
+                        student_noisy_input_ids,
+                        student_attention_mask,
                         labels,
                     )
                     robust_loss, robust_parts = robust_distillation_loss(
@@ -600,6 +542,8 @@ def main():
             total_robust_ce_loss += robust_parts["robust_ce_loss"].item()
             total_robust_kd_loss += robust_parts["robust_kd_loss"].item()
             total_consistency_loss += robust_parts["consistency_loss"].item()
+            if batch_noise_prob is not None:
+                total_noise_prob += batch_noise_prob
 
             if (step + 1) % grad_accum_steps == 0 or (step + 1) == len(train_loader):
                 optimizer_step_with_amp(
@@ -616,6 +560,7 @@ def main():
                     "kd": f"{clean_parts['kd_loss'].item():.4f}",
                     "feat": f"{clean_parts['feature_loss'].item():.4f}",
                     "rob": f"{robust_loss.item():.4f}",
+                    "p": "na" if batch_noise_prob is None else f"{batch_noise_prob:.1f}",
                 }
             )
 
@@ -627,6 +572,7 @@ def main():
             "train_robust_ce_loss": total_robust_ce_loss / max(len(train_loader), 1),
             "train_robust_kd_loss": total_robust_kd_loss / max(len(train_loader), 1),
             "train_consistency_loss": total_consistency_loss / max(len(train_loader), 1),
+            "train_avg_noise_prob": total_noise_prob / max(len(train_loader), 1) if use_robust_distill else None,
             "epoch": epoch,
         }
 

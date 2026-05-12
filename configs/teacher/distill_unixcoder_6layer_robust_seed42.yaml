@@ -19,11 +19,13 @@ gradient_accumulation_steps: 1
 fp16: true
 
 temperature: 2.0
-ce_weight: 0.45
-kd_weight: 0.45
+ce_weight: 0.35
+kd_weight: 0.35
 feature_weight: 0.1
 robust_distill: true
-robust_ce_weight: 0.15
-robust_kd_weight: 0.35
-consistency_weight: 0.15
+robust_noise_probs: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+robust_min_keep_tokens: 1
+robust_ce_weight: 0.25
+robust_kd_weight: 0.45
+consistency_weight: 0.25
 dropout_prob: 0.1
