@@ -5,10 +5,10 @@ import torch
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer
 
-from log_classifier.teacher.augment import TextCodeAugmenter
 from log_classifier.teacher.data import ClassificationDataset, read_dataset
 from log_classifier.teacher.model import CodeBERTClassifier
-from log_classifier.teacher.train_stage1 import evaluate
+from log_classifier.teacher.train_distill_student import RobustTextAugmenter, truncate_student_layers
+from log_classifier.teacher.train_stage1_ce import evaluate
 from log_classifier.teacher.utils import get_device, load_label_mapping, load_yaml, save_json, set_seed
 
 
@@ -49,6 +49,7 @@ def main():
         model_name=config.get("model_name", "microsoft/codebert-base"),
         num_labels=num_labels
     )
+    truncate_student_layers(model, config.get("student_keep_layers"))
     # the encoder config should ideally be loaded from the checkpoint, but codebert-base works since its weights are restored
     model.load_state_dict(torch.load(os.path.join(checkpoint_dir, "pytorch_model.bin"), map_location="cpu"))
     model.to(device)
@@ -72,16 +73,15 @@ def main():
     # 2. Robust evaluation
     if config.get("robust_eval", True):
         print("Evaluating on robust permutations...")
-        augmenter = TextCodeAugmenter(seed=config.get("seed", 42))
+        augmenter = RobustTextAugmenter(seed=config.get("seed", 42))
         
         robust_types = [
             ("remove_role_markers", augmenter.remove_role_markers),
             ("remove_markdown_noise", augmenter.remove_markdown_noise),
-            ("rename_code_variables", augmenter.rename_code_variables),
             ("remove_code_comments", augmenter.remove_code_comments),
+            ("normalize_whitespace", augmenter.normalize_whitespace),
             ("truncate_assistant_explanation", augmenter.truncate_assistant_explanation),
             ("add_harmless_noise", augmenter.add_harmless_noise),
-            ("cn_en_term_swap", augmenter.cn_en_term_swap)
         ]
         
         robust_reports = {}
@@ -94,7 +94,11 @@ def main():
             perturbed_data = []
             for item in test_data:
                 p_item = item.copy()
-                p_item["text"] = augmenter._safe_augment(aug_func, item["text"])
+                try:
+                    aug_text = aug_func(item["text"])
+                    p_item["text"] = aug_text if aug_text.strip() else item["text"]
+                except Exception:
+                    p_item["text"] = item["text"]
                 perturbed_data.append(p_item)
                 
             p_dataset = ClassificationDataset(perturbed_data, label2id)
