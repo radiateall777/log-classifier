@@ -10,7 +10,8 @@ from transformers import AutoTokenizer
 from log_classifier.teacher.data import ClassificationDataset, read_dataset
 from log_classifier.teacher.metrics import compute_classification_metrics
 from log_classifier.teacher.model import CodeBERTClassifier
-from log_classifier.teacher.train_distill_student import RobustTextAugmenter, truncate_student_layers
+from log_classifier.teacher.token_noise import apply_unk_token_noise
+from log_classifier.teacher.train_distill_student import truncate_student_layers
 from log_classifier.teacher.utils import (
     get_device,
     load_label_mapping,
@@ -50,17 +51,45 @@ def build_loader(samples, label2id, tokenizer, max_length, batch_size):
 
 
 @torch.inference_mode()
-def evaluate_loader(model, dataloader, device, labels_list, id2label, desc):
+def evaluate_loader(
+    model,
+    dataloader,
+    device,
+    labels_list,
+    id2label,
+    desc,
+    tokenizer=None,
+    noise_prob=None,
+    min_keep_tokens=1,
+    seed=42,
+):
     model.eval()
 
     all_preds = []
     all_labels = []
     total_loss = 0.0
+    generator = None
+
+    if noise_prob is not None:
+        if tokenizer is None:
+            raise ValueError("tokenizer is required when noise_prob is set")
+        generator = torch.Generator(device=device)
+        generator.manual_seed(int(seed))
 
     for batch in tqdm(dataloader, desc=desc):
         input_ids = batch["input_ids"].to(device)
         attention_mask = batch["attention_mask"].to(device)
         labels = batch["labels"].to(device)
+
+        if noise_prob is not None:
+            input_ids, _ = apply_unk_token_noise(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                tokenizer=tokenizer,
+                noise_prob=float(noise_prob),
+                min_keep_tokens=int(min_keep_tokens),
+                generator=generator,
+            )
 
         outputs = model(
             input_ids=input_ids,
@@ -87,15 +116,43 @@ def evaluate_loader(model, dataloader, device, labels_list, id2label, desc):
 
 
 @torch.inference_mode()
-def measure_throughput(model, dataloader, device, rounds=5, warmup_rounds=1):
+def measure_throughput(
+    model,
+    dataloader,
+    device,
+    rounds=5,
+    warmup_rounds=1,
+    tokenizer=None,
+    noise_prob=None,
+    min_keep_tokens=1,
+    seed=42,
+):
     model.eval()
     total_samples = len(dataloader.dataset)
+    generator = None
+
+    if noise_prob is not None:
+        if tokenizer is None:
+            raise ValueError("tokenizer is required when noise_prob is set")
+        generator = torch.Generator(device=device)
+        generator.manual_seed(int(seed))
 
     for _ in range(int(warmup_rounds)):
         for batch in dataloader:
+            input_ids = batch["input_ids"].to(device)
+            attention_mask = batch["attention_mask"].to(device)
+            if noise_prob is not None:
+                input_ids, _ = apply_unk_token_noise(
+                    input_ids=input_ids,
+                    attention_mask=attention_mask,
+                    tokenizer=tokenizer,
+                    noise_prob=float(noise_prob),
+                    min_keep_tokens=int(min_keep_tokens),
+                    generator=generator,
+                )
             model(
-                input_ids=batch["input_ids"].to(device),
-                attention_mask=batch["attention_mask"].to(device),
+                input_ids=input_ids,
+                attention_mask=attention_mask,
                 return_features=False,
             )
         if device.type == "cuda":
@@ -105,9 +162,20 @@ def measure_throughput(model, dataloader, device, rounds=5, warmup_rounds=1):
     for round_idx in range(int(rounds)):
         start = time.perf_counter()
         for batch in dataloader:
+            input_ids = batch["input_ids"].to(device)
+            attention_mask = batch["attention_mask"].to(device)
+            if noise_prob is not None:
+                input_ids, _ = apply_unk_token_noise(
+                    input_ids=input_ids,
+                    attention_mask=attention_mask,
+                    tokenizer=tokenizer,
+                    noise_prob=float(noise_prob),
+                    min_keep_tokens=int(min_keep_tokens),
+                    generator=generator,
+                )
             model(
-                input_ids=batch["input_ids"].to(device),
-                attention_mask=batch["attention_mask"].to(device),
+                input_ids=input_ids,
+                attention_mask=attention_mask,
                 return_features=False,
             )
         if device.type == "cuda":
@@ -118,32 +186,6 @@ def measure_throughput(model, dataloader, device, rounds=5, warmup_rounds=1):
 
     avg_elapsed = sum(elapsed_values) / max(len(elapsed_values), 1)
     return total_samples / avg_elapsed
-
-
-def build_robust_samples(samples, seed):
-    augmenter = RobustTextAugmenter(seed=int(seed))
-    robust_types = [
-        ("remove_role_markers", augmenter.remove_role_markers),
-        ("remove_markdown_noise", augmenter.remove_markdown_noise),
-        ("remove_code_comments", augmenter.remove_code_comments),
-        ("normalize_whitespace", augmenter.normalize_whitespace),
-        ("truncate_assistant_explanation", augmenter.truncate_assistant_explanation),
-        ("add_harmless_noise", augmenter.add_harmless_noise),
-    ]
-
-    robust_samples_by_type = {}
-    for name, aug_func in robust_types:
-        perturbed = []
-        for item in samples:
-            new_item = item.copy()
-            try:
-                augmented = aug_func(item["text"])
-                new_item["text"] = augmented if augmented.strip() else item["text"]
-            except Exception:
-                new_item["text"] = item["text"]
-            perturbed.append(new_item)
-        robust_samples_by_type[name] = perturbed
-    return robust_samples_by_type
 
 
 def average_metrics(metrics_list):
@@ -187,6 +229,8 @@ def main():
     max_length = int(config.get("max_length", 512))
     batch_size = int(config.get("batch_size", 64))
     throughput_batch_size = int(config.get("throughput_batch_size", batch_size))
+    min_keep_tokens = int(config.get("min_keep_tokens", 1))
+    noise_probs = config.get("noise_probs", [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
 
     id2label, label2id = load_label_mapping(os.path.join(checkpoint_dir, "label_mapping.json"))
     labels_list = sorted(id2label.keys())
@@ -235,21 +279,26 @@ def main():
         desc="Clean eval",
     )
 
-    robust_by_type = {}
+    robust_by_prob = {}
     robust_metrics = []
     if bool(config.get("robust_eval", True)):
-        print("Evaluating robustness...")
-        for name, robust_samples in build_robust_samples(samples, config.get("seed", 42)).items():
-            loader = build_loader(robust_samples, label2id, tokenizer, max_length, batch_size)
+        print("Evaluating UNK-token robustness...")
+        for noise_prob in noise_probs:
+            noise_prob = float(noise_prob)
             metrics = evaluate_loader(
                 model,
-                loader,
+                clean_loader,
                 device,
                 labels_list,
                 id2label,
-                desc=f"Robust eval: {name}",
+                desc=f"Robust eval UNK p={noise_prob}",
+                tokenizer=tokenizer,
+                noise_prob=noise_prob,
+                min_keep_tokens=min_keep_tokens,
+                seed=int(config.get("seed", 42)) + int(noise_prob * 1000),
             )
-            robust_by_type[name] = metrics
+            metrics["noise_prob"] = noise_prob
+            robust_by_prob[str(noise_prob)] = metrics
             robust_metrics.append(metrics)
 
     robust_average = average_metrics(robust_metrics) if robust_metrics else None
@@ -261,6 +310,10 @@ def main():
         device,
         rounds=int(config.get("throughput_rounds", 5)),
         warmup_rounds=int(config.get("throughput_warmup_rounds", 1)),
+        tokenizer=tokenizer,
+        noise_prob=float(config["throughput_noise_prob"]) if config.get("throughput_noise_prob") is not None else None,
+        min_keep_tokens=min_keep_tokens,
+        seed=int(config.get("seed", 42)),
     )
 
     baseline_throughput = config.get("baseline_throughput_samples_per_sec")
@@ -300,8 +353,11 @@ def main():
         "max_length": max_length,
         "batch_size": batch_size,
         "throughput_batch_size": throughput_batch_size,
+        "noise_type": "input_id_level_unk_replacement_fixed_ratio",
+        "noise_probs": [float(p) for p in noise_probs],
+        "min_keep_tokens": min_keep_tokens,
         "clean": clean_metrics,
-        "robust_by_type": robust_by_type,
+        "unk_noise_by_prob": robust_by_prob,
         "robust_average": robust_average,
         "summary": summary,
     }
