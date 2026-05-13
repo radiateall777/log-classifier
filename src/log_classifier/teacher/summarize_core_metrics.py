@@ -183,7 +183,7 @@ def main():
     parser.add_argument(
         "--search_roots",
         nargs="+",
-        default=["baselines", "outputs"],
+        default=["outputs"],
         help="Directories to scan for result JSON files.",
     )
     parser.add_argument(

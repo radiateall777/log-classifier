@@ -388,6 +388,9 @@ def main():
         model_name=student_model_name,
         num_labels=num_labels,
         dropout_prob=float(config.get("dropout_prob", 0.1)),
+        pooling_mode=config.get("pooling_mode", "cls"),
+        classifier_hidden_dim=int(config.get("classifier_hidden_dim", 0)),
+        multi_sample_dropout_num=int(config.get("multi_sample_dropout_num", 1)),
     ).to(device)
     truncate_student_layers(student, config.get("student_keep_layers"))
     feature_projector = build_feature_projector(student, teacher, device)

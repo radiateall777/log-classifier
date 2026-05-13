@@ -27,3 +27,6 @@ use_rdrop: true
 rdrop_weight: 0.25
 label_smoothing: 0.05
 dropout_prob: 0.1
+pooling_mode: cls_mean
+classifier_hidden_dim: 512
+multi_sample_dropout_num: 4

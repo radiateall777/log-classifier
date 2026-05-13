@@ -17,6 +17,10 @@ seed: 42
 min_keep_tokens: 1
 noise_probs: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 throughput_noise_prob:
+dropout_prob: 0.1
+pooling_mode: cls_mean
+classifier_hidden_dim: 512
+multi_sample_dropout_num: 4
 
 clean_accuracy_target: 0.90
 robust_accuracy_target: 0.73

@@ -63,7 +63,11 @@ def main():
 
     model = CodeBERTClassifier(
         model_name=config.get("model_name", "microsoft/codebert-base"),
-        num_labels=num_labels
+        num_labels=num_labels,
+        dropout_prob=float(config.get("dropout_prob", 0.1)),
+        pooling_mode=config.get("pooling_mode", "cls"),
+        classifier_hidden_dim=int(config.get("classifier_hidden_dim", 0)),
+        multi_sample_dropout_num=int(config.get("multi_sample_dropout_num", 1)),
     )
     truncate_student_layers(model, inferred_keep_layers)
     # the encoder config should ideally be loaded from the checkpoint, but codebert-base works since its weights are restored

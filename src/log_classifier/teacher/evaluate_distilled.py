@@ -243,7 +243,14 @@ def main():
 
     print("Loading tokenizer and model...")
     tokenizer = AutoTokenizer.from_pretrained(checkpoint_dir)
-    model = CodeBERTClassifier(model_name=model_name, num_labels=len(label2id))
+    model = CodeBERTClassifier(
+        model_name=model_name,
+        num_labels=len(label2id),
+        dropout_prob=float(config.get("dropout_prob", 0.1)),
+        pooling_mode=config.get("pooling_mode", "cls"),
+        classifier_hidden_dim=int(config.get("classifier_hidden_dim", 0)),
+        multi_sample_dropout_num=int(config.get("multi_sample_dropout_num", 1)),
+    )
     state_dict = torch.load(os.path.join(checkpoint_dir, "pytorch_model.bin"), map_location="cpu")
     inferred_keep_layers = config.get("student_keep_layers")
     if inferred_keep_layers is None:
