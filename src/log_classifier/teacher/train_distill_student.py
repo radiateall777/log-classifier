@@ -239,12 +239,16 @@ def infer_hidden_size(model):
     return int(model.encoder.config.hidden_size)
 
 
+def infer_feature_size(model):
+    return int(getattr(model, "feature_dim", infer_hidden_size(model)))
+
+
 def build_feature_projector(student, teacher, device):
-    student_hidden_size = infer_hidden_size(student)
-    teacher_hidden_size = infer_hidden_size(teacher)
-    if student_hidden_size == teacher_hidden_size:
+    student_feature_size = infer_feature_size(student)
+    teacher_feature_size = infer_feature_size(teacher)
+    if student_feature_size == teacher_feature_size:
         return nn.Identity().to(device)
-    return nn.Linear(student_hidden_size, teacher_hidden_size).to(device)
+    return nn.Linear(student_feature_size, teacher_feature_size).to(device)
 
 
 def find_transformer_layers(encoder):

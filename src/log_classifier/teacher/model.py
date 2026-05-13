@@ -51,6 +51,7 @@ class CodeBERTClassifier(nn.Module):
             self.pre_classifier = nn.Identity()
             classifier_input_dim = head_input_dim
 
+        self.feature_dim = classifier_input_dim
         self.classifier = nn.Linear(classifier_input_dim, num_labels)
         self.loss_fn = nn.CrossEntropyLoss()
 
