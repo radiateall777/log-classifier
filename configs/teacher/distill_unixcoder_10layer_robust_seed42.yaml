@@ -22,6 +22,7 @@ temperature: 2.0
 ce_weight: 0.35
 kd_weight: 0.55
 feature_weight: 0.15
+hidden_state_weight: 0.15
 use_rdrop: true
 rdrop_weight: 0.25
 label_smoothing: 0.05

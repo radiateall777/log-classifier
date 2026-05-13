@@ -115,6 +115,16 @@ def forward_with_features(model, input_ids, attention_mask, labels):
     )
 
 
+def forward_with_hidden_states(model, input_ids, attention_mask, labels):
+    return model(
+        input_ids=input_ids,
+        attention_mask=attention_mask,
+        labels=labels,
+        return_features=True,
+        return_hidden_states=True,
+    )
+
+
 def kd_kl_loss(student_logits, teacher_logits, temperature):
     return F.kl_div(
         F.log_softmax(student_logits / temperature, dim=-1),
@@ -145,6 +155,33 @@ def feature_alignment_loss(student_features, teacher_features):
     return F.mse_loss(student_features, teacher_features)
 
 
+def hidden_state_alignment_loss(student_hidden_states, teacher_hidden_states):
+    if not student_hidden_states or not teacher_hidden_states:
+        raise ValueError("hidden states are required for hidden-state distillation")
+
+    student_layers = list(student_hidden_states[1:])
+    teacher_layers = list(teacher_hidden_states[1:])
+
+    num_student_layers = len(student_layers)
+    num_teacher_layers = len(teacher_layers)
+    if num_student_layers == 0 or num_teacher_layers == 0:
+        return teacher_layers[-1].new_tensor(0.0)
+
+    mapped_teacher_indices = torch.linspace(
+        0,
+        num_teacher_layers - 1,
+        steps=num_student_layers,
+    ).round().long().tolist()
+
+    losses = []
+    for student_idx, teacher_idx in enumerate(mapped_teacher_indices):
+        student_state = F.normalize(student_layers[student_idx], dim=-1)
+        teacher_state = F.normalize(teacher_layers[teacher_idx].detach(), dim=-1)
+        losses.append(F.mse_loss(student_state, teacher_state))
+
+    return torch.stack(losses).mean()
+
+
 def distillation_loss(
     student_logits,
     teacher_logits,
@@ -157,6 +194,9 @@ def distillation_loss(
     teacher_features=None,
     projected_student_features=None,
     feature_weight=0.0,
+    student_hidden_states=None,
+    teacher_hidden_states=None,
+    hidden_state_weight=0.0,
 ):
     ce_loss = F.cross_entropy(student_logits, labels, label_smoothing=float(label_smoothing))
     kd_loss = kd_kl_loss(student_logits, teacher_logits, temperature)
@@ -168,11 +208,22 @@ def distillation_loss(
     else:
         feature_loss = student_logits.new_tensor(0.0)
 
-    loss = ce_weight * ce_loss + kd_weight * kd_loss + feature_weight * feature_loss
+    if hidden_state_weight > 0 and student_hidden_states is not None and teacher_hidden_states is not None:
+        hidden_state_loss = hidden_state_alignment_loss(student_hidden_states, teacher_hidden_states)
+    else:
+        hidden_state_loss = student_logits.new_tensor(0.0)
+
+    loss = (
+        ce_weight * ce_loss
+        + kd_weight * kd_loss
+        + feature_weight * feature_loss
+        + hidden_state_weight * hidden_state_loss
+    )
     return loss, {
         "ce_loss": ce_loss.detach(),
         "kd_loss": kd_loss.detach(),
         "feature_loss": feature_loss.detach(),
+        "hidden_state_loss": hidden_state_loss.detach(),
     }
 
 
@@ -370,6 +421,7 @@ def main():
     ce_weight = float(config.get("ce_weight", 0.45))
     kd_weight = float(config.get("kd_weight", 0.45))
     feature_weight = float(config.get("feature_weight", 0.1))
+    hidden_state_weight = float(config.get("hidden_state_weight", 0.15))
     label_smoothing = float(config.get("label_smoothing", 0.05))
     rdrop_weight = float(config.get("rdrop_weight", 0.2))
 
@@ -380,6 +432,7 @@ def main():
         f"epochs={epochs}, total_steps={total_steps}, warmup_steps={warmup_steps}, "
         f"temperature={temperature}, ce_weight={ce_weight}, kd_weight={kd_weight}, "
         f"feature_weight={feature_weight}, use_rdrop={use_rdrop}, "
+        f"hidden_state_weight={hidden_state_weight}, "
         f"label_smoothing={label_smoothing}, rdrop_weight={rdrop_weight}"
     )
 
@@ -389,6 +442,7 @@ def main():
         total_ce_loss = 0.0
         total_kd_loss = 0.0
         total_feature_loss = 0.0
+        total_hidden_state_loss = 0.0
         total_rdrop_loss = 0.0
 
         optimizer.zero_grad(set_to_none=True)
@@ -403,7 +457,7 @@ def main():
             labels = batch["labels"].to(device)
 
             with torch.inference_mode():
-                teacher_outputs = forward_with_features(
+                teacher_outputs = forward_with_hidden_states(
                     teacher,
                     teacher_input_ids,
                     teacher_attention_mask,
@@ -411,9 +465,10 @@ def main():
                 )
                 teacher_logits = teacher_outputs["logits"]
                 teacher_features = teacher_outputs["features"]
+                teacher_hidden_states = teacher_outputs["hidden_states"]
 
             with autocast(device_type=amp_device_type, enabled=use_fp16):
-                student_outputs = forward_with_features(
+                student_outputs = forward_with_hidden_states(
                     student,
                     student_input_ids,
                     student_attention_mask,
@@ -421,6 +476,7 @@ def main():
                 )
                 student_logits = student_outputs["logits"]
                 student_features = student_outputs["features"]
+                student_hidden_states = student_outputs["hidden_states"]
                 projected_student_features = feature_projector(student_features)
 
                 if use_rdrop:
@@ -451,6 +507,9 @@ def main():
                     teacher_features=teacher_features,
                     projected_student_features=projected_student_features,
                     feature_weight=feature_weight,
+                    student_hidden_states=student_hidden_states,
+                    teacher_hidden_states=teacher_hidden_states,
+                    hidden_state_weight=hidden_state_weight,
                 )
                 loss = clean_loss + rdrop_weight * rdrop_term
                 loss_for_backward = loss / grad_accum_steps
@@ -461,6 +520,7 @@ def main():
             total_ce_loss += clean_parts["ce_loss"].item()
             total_kd_loss += clean_parts["kd_loss"].item()
             total_feature_loss += clean_parts["feature_loss"].item()
+            total_hidden_state_loss += clean_parts["hidden_state_loss"].item()
             total_rdrop_loss += rdrop_term.item()
 
             if (step + 1) % grad_accum_steps == 0 or (step + 1) == len(train_loader):
@@ -477,6 +537,7 @@ def main():
                     "ce": f"{clean_parts['ce_loss'].item():.4f}",
                     "kd": f"{clean_parts['kd_loss'].item():.4f}",
                     "feat": f"{clean_parts['feature_loss'].item():.4f}",
+                    "hid": f"{clean_parts['hidden_state_loss'].item():.4f}",
                     "rdrop": f"{rdrop_term.item():.4f}",
                 }
             )
@@ -486,6 +547,7 @@ def main():
             "train_ce_loss": total_ce_loss / max(len(train_loader), 1),
             "train_kd_loss": total_kd_loss / max(len(train_loader), 1),
             "train_feature_loss": total_feature_loss / max(len(train_loader), 1),
+            "train_hidden_state_loss": total_hidden_state_loss / max(len(train_loader), 1),
             "train_rdrop_loss": total_rdrop_loss / max(len(train_loader), 1),
             "epoch": epoch,
         }
@@ -505,6 +567,7 @@ def main():
             f"CE: {val_metrics['train_ce_loss']:.4f} | "
             f"KD: {val_metrics['train_kd_loss']:.4f} | "
             f"Feat: {val_metrics['train_feature_loss']:.4f} | "
+            f"Hidden: {val_metrics['train_hidden_state_loss']:.4f} | "
             f"RDrop: {val_metrics['train_rdrop_loss']:.4f} | "
             f"Eval Loss: {val_metrics['eval_loss']:.4f} | "
             f"Macro F1: {val_metrics['macro_f1']:.4f} | "

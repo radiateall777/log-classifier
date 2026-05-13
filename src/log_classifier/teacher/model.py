@@ -40,6 +40,7 @@ class CodeBERTClassifier(nn.Module):
         labels: torch.Tensor | None = None,
         token_type_ids: torch.Tensor | None = None,
         return_features: bool = False,
+        return_hidden_states: bool = False,
         **kwargs,
     ) -> dict[str, torch.Tensor]:
         encoder_kwargs = {
@@ -51,6 +52,9 @@ class CodeBERTClassifier(nn.Module):
         # Passing it only when provided keeps this compatible with multiple backbones.
         if token_type_ids is not None:
             encoder_kwargs["token_type_ids"] = token_type_ids
+
+        if return_hidden_states:
+            encoder_kwargs["output_hidden_states"] = True
 
         encoder_outputs = self.encoder(**encoder_kwargs)
 
@@ -69,5 +73,8 @@ class CodeBERTClassifier(nn.Module):
 
         if return_features:
             outputs["features"] = pooled
+
+        if return_hidden_states:
+            outputs["hidden_states"] = encoder_outputs.hidden_states
 
         return outputs
