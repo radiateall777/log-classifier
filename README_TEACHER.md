@@ -52,14 +52,24 @@ Default student:
 
 Recommended command:
 ```
-python -m log_classifier.teacher.train_distill_student \
-  --config configs/teacher/distill_unixcoder_6layer_robust_seed42.yaml
+python -m log_classifier.teacher.train_distill_student --config configs/teacher/distill_unixcoder_10layer_robust_seed42.yaml
 ```
 
 The distilled student checkpoint is saved under:
 ```
 outputs/teacher/distill_unixcoder_6layer_robust_seed42/best/
 ```
+
+## Step3：evaluate
+Recommended command:
+```
+python -m log_classifier.teacher.evaluate_distilled --config configs/teacher/eval_distilled_kd_10layer.yaml
+```
+
+```
+python -m log_classifier.teacher.summarize_core_metrics --baseline_name fasttext --output outputs/summary/core_metrics_summary.json
+```
+
 
 Key knobs:
 - `student_model_name`: default is UniXcoder so tokenizer and pretraining domain match the teacher.

@@ -11,7 +11,7 @@ student_max_length: 512
 batch_size: 12
 eval_batch_size: 48
 learning_rate: 2.0e-5
-epochs: 14
+epochs: 7
 warmup_ratio: 0.1
 weight_decay: 0.01
 seed: 42
@@ -19,14 +19,14 @@ gradient_accumulation_steps: 1
 fp16: true
 
 temperature: 2.0
-ce_weight: 0.3
-kd_weight: 0.5
-feature_weight: 0.15
-hidden_state_weight: 0.25
+ce_weight: 0.45
+kd_weight: 0.45
+feature_weight: 0.1
+hidden_state_weight: 0.1
 use_rdrop: true
-rdrop_weight: 0.2
-label_smoothing: 0.05
+rdrop_weight: 0.1
+label_smoothing: 0.02
 dropout_prob: 0.1
 pooling_mode: cls_mean
 classifier_hidden_dim: 512
-multi_sample_dropout_num: 4
+multi_sample_dropout_num: 2
