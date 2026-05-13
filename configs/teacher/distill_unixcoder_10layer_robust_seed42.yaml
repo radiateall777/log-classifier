@@ -19,12 +19,12 @@ gradient_accumulation_steps: 1
 fp16: true
 
 temperature: 2.0
-ce_weight: 0.35
-kd_weight: 0.55
+ce_weight: 0.3
+kd_weight: 0.5
 feature_weight: 0.15
-hidden_state_weight: 0.15
+hidden_state_weight: 0.25
 use_rdrop: true
-rdrop_weight: 0.25
+rdrop_weight: 0.2
 label_smoothing: 0.05
 dropout_prob: 0.1
 pooling_mode: cls_mean
